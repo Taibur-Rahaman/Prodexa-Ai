@@ -1,0 +1,69 @@
+# Prodexa AI — Roadmap
+
+## Phase 0 — Foundation
+
+- [x] Project vision.
+- [x] PRD.
+- [x] Business decision ledger.
+- [x] Architecture definition.
+- [x] API specification baseline.
+- [x] WordPress plugin specification baseline.
+- [x] Connector framework definition.
+- [x] License system definition.
+- [x] Security baseline.
+- [x] AI development rules.
+- [x] Project memory.
+
+## Phase 1 — Pilot MVP
+
+- [ ] Select backend stack.
+- [ ] Select hosting and managed services.
+- [ ] Implement Prodexa API skeleton.
+- [ ] Implement tenant/site identity.
+- [ ] Implement license validation.
+- [ ] Implement cache layer.
+- [ ] Implement connector interface.
+- [ ] Implement first permitted connector.
+- [ ] Implement normalized offer schema.
+- [ ] Implement deterministic pricing.
+- [ ] Implement ranking baseline.
+- [ ] Implement WordPress plugin skeleton.
+- [ ] Integrate storefront discovery UI.
+- [ ] Integrate WooCommerce order metadata.
+- [ ] Add end-to-end tests.
+- [ ] Run pilot on owner's store.
+
+## Phase 2 — Pilot Hardening
+
+- [ ] Improve matching accuracy.
+- [ ] Add more permitted connectors.
+- [ ] Improve cache/freshness strategy.
+- [ ] Add connector health monitoring.
+- [ ] Add usage metering.
+- [ ] Improve admin diagnostics.
+- [ ] Security review.
+- [ ] Performance/load testing.
+
+## Phase 3 — SaaS Readiness
+
+- [ ] Multi-tenant admin portal.
+- [ ] Subscription billing integration.
+- [ ] Self-service license provisioning.
+- [ ] Plan/quota management.
+- [ ] Customer onboarding.
+- [ ] Documentation portal.
+- [ ] Automated release process.
+- [ ] Commercial plugin packaging.
+
+## Phase 4 — Growth
+
+- [ ] Connector marketplace/process.
+- [ ] Advanced semantic matching.
+- [ ] Search analytics.
+- [ ] More storefront integrations.
+- [ ] Queue/worker scaling.
+- [ ] Advanced observability.
+
+## Rule
+
+Roadmap items are plans, not commitments. A roadmap change should be recorded in `CHANGELOG.md` when it materially changes product direction.
