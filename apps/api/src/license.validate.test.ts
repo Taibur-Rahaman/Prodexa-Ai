@@ -187,7 +187,7 @@ describe("POST /v1/license/validate", () => {
       return;
     }
     await db.exec(`
-      TRUNCATE TABLE request_nonces, usage_counters, site_activations, licenses, plans, tenants
+      TRUNCATE TABLE request_nonces, usage_counters, normalized_offers, site_activations, licenses, plans, tenants
       RESTART IDENTITY CASCADE
     `);
   });

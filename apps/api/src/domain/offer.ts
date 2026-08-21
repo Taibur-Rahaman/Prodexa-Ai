@@ -23,12 +23,53 @@ export type NormalizedOffer = {
   expires_at: string | null;
 };
 
-const AVAILABILITY = new Set<OfferAvailability>([
+/** Customer-safe discovery search hit. Private source fields must not appear here. */
+export type CustomerDiscoveryOffer = {
+  offer_id: string;
+  title: string;
+  image_url: string | null;
+  display_price: number;
+  currency: string;
+  availability: OfferAvailability;
+  freshness: {
+    retrieved_at: string;
+  };
+};
+
+export function toCustomerDiscoveryOffer(input: {
+  offer_id: string;
+  title: string;
+  image_url: string | null;
+  price: number;
+  currency: string;
+  availability: OfferAvailability;
+  retrieved_at: string;
+}): CustomerDiscoveryOffer {
+  return {
+    offer_id: input.offer_id,
+    title: input.title,
+    image_url: input.image_url,
+    display_price: input.price,
+    currency: input.currency,
+    availability: input.availability,
+    freshness: {
+      retrieved_at: input.retrieved_at,
+    },
+  };
+}
+
+export const OFFER_AVAILABILITIES = [
   "in_stock",
   "out_of_stock",
   "preorder",
   "unknown",
-]);
+] as const;
+
+const AVAILABILITY = new Set<OfferAvailability>(OFFER_AVAILABILITIES);
+
+export function isOfferAvailability(value: unknown): value is OfferAvailability {
+  return typeof value === "string" && AVAILABILITY.has(value as OfferAvailability);
+}
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;

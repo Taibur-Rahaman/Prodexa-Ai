@@ -72,7 +72,7 @@ export type ValidateLicenseInput = {
   method: string;
   path: string;
   rawBody: string;
-  domain: string;
+  domain?: string | null;
   requestedFeature: string | null;
   now?: Date;
 };
@@ -251,7 +251,7 @@ export async function validateLicensedSite(
         siteId: row.site_id,
         siteStatus: asSiteStatus(row.site_status),
         boundDomain: row.domain,
-        requestDomain: input.domain,
+        requestDomain: input.domain ?? row.domain,
         licenseStatus: asStatus(row.license_status),
         startsAt: asDate(row.starts_at),
         expiresAt,

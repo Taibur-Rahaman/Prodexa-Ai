@@ -6,6 +6,7 @@ import type { CacheStore } from "./cache/store.js";
 import type { AppConfig } from "./config.js";
 import type { SqlClient } from "./db/sql.js";
 import { ApiError, apiError } from "./http/errors.js";
+import { registerDiscoveryRoutes } from "./routes/discovery.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerLicenseRoutes } from "./routes/license.js";
 
@@ -98,14 +99,17 @@ export async function buildApp(
     return payload;
   });
 
-  await registerHealthRoutes(app);
-  registerLicenseRoutes(app, {
+  const licenseAuth = {
     db: deps.db ?? null,
     apiSigningSecret: config.apiSigningSecret,
     timestampSkewSeconds: config.authTimestampSkewSeconds,
     rateLimitPerMinute: config.validateRateLimitPerMinute,
     cache: createLicenseValidationCache(deps.cache ?? new NoopCacheStore()),
-  });
+  };
+
+  await registerHealthRoutes(app);
+  registerLicenseRoutes(app, licenseAuth);
+  registerDiscoveryRoutes(app, licenseAuth);
 
   app.setNotFoundHandler((request, reply) => {
     reply.status(404).send(
