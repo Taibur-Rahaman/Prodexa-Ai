@@ -19,6 +19,8 @@ final class Prodexa_AI_Api_Client
 
     public const DISCOVERY_SEARCH_PATH = '/v1/discovery/search';
 
+    public const DISCOVERY_SELECT_PATH = '/v1/discovery/select';
+
     /**
      * @param callable(string, array<string, mixed>): mixed|null $transport
      */
@@ -61,6 +63,21 @@ final class Prodexa_AI_Api_Client
         }
 
         return $this->request('POST', self::DISCOVERY_SEARCH_PATH, $body, true);
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    public function select(array $body): Prodexa_AI_Http_Result
+    {
+        if (!$this->settings->has_site_credentials()) {
+            return Prodexa_AI_Http_Result::failure(
+                'MISSING_CREDENTIALS',
+                'A site ID and site secret are required before the plugin can call protected Prodexa endpoints.'
+            );
+        }
+
+        return $this->request('POST', self::DISCOVERY_SELECT_PATH, $body, true);
     }
 
     /**

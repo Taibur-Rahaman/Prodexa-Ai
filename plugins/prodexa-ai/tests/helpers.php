@@ -76,3 +76,55 @@ final class Prodexa_AI_Test_Case
         self::assert_true(!$condition, $message);
     }
 }
+
+final class Prodexa_AI_Test_Session
+{
+    /** @var array<string, mixed> */
+    public array $store = [];
+
+    public function get(string $key, mixed $default = null): mixed
+    {
+        return array_key_exists($key, $this->store) ? $this->store[$key] : $default;
+    }
+
+    public function set(string $key, mixed $value): void
+    {
+        $this->store[$key] = $value;
+    }
+}
+
+final class Prodexa_AI_Test_Order
+{
+    /** @var array<string, mixed> */
+    public array $meta = [];
+
+    public function update_meta_data(string $key, mixed $value): void
+    {
+        $this->meta[$key] = $value;
+    }
+
+    public function delete_meta_data(string $key): void
+    {
+        unset($this->meta[$key]);
+    }
+
+    public function get_meta(string $key, bool $single = true): mixed
+    {
+        unset($single);
+
+        return $this->meta[$key] ?? '';
+    }
+
+    /**
+     * @return list<object{key: string}>
+     */
+    public function get_meta_data(): array
+    {
+        $rows = [];
+        foreach ($this->meta as $key => $value) {
+            $rows[] = (object) ['key' => $key, 'value' => $value];
+        }
+
+        return $rows;
+    }
+}

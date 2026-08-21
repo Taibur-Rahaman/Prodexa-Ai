@@ -3,7 +3,7 @@
  * Plugin Name:       Prodexa AI
  * Plugin URI:        https://github.com/Taibur-Rahaman/Prodexa-Ai
  * Description:       Connects a WordPress/WooCommerce store to the hosted Prodexa discovery API. The plugin is a client; licensing and discovery remain server-side.
- * Version:           0.1.1
+ * Version:           0.1.2
  * Requires at least: 6.4
  * Requires PHP:      8.2
  * Author:            Prodexa
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PRODEXA_AI_VERSION', '0.1.1');
+define('PRODEXA_AI_VERSION', '0.1.2');
 define('PRODEXA_AI_PLUGIN_FILE', __FILE__);
 define('PRODEXA_AI_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
@@ -36,6 +36,8 @@ require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-activator.php';
 require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-deactivator.php';
 require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-admin.php';
 require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-discovery.php';
+require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-selection.php';
+require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-storefront.php';
 require_once PRODEXA_AI_PLUGIN_DIR . 'includes/class-plugin.php';
 

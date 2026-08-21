@@ -17,6 +17,8 @@ final class Prodexa_AI_Storefront
 
     public const AJAX_ACTION = 'prodexa_ai_search';
 
+    public const SELECT_ACTION = 'prodexa_ai_select';
+
     public const NONCE_ACTION = 'prodexa_ai_storefront_search';
 
     public const SCRIPT_HANDLE = 'prodexa-ai-search';
@@ -28,6 +30,7 @@ final class Prodexa_AI_Storefront
     public function __construct(
         private readonly Prodexa_AI_Settings $settings,
         private readonly Prodexa_AI_Api_Client $client,
+        private readonly ?Prodexa_AI_WooCommerce $woocommerce = null,
     ) {
     }
 
@@ -37,6 +40,8 @@ final class Prodexa_AI_Storefront
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
         add_action('wp_ajax_' . self::AJAX_ACTION, [$this, 'handle_search']);
         add_action('wp_ajax_nopriv_' . self::AJAX_ACTION, [$this, 'handle_search']);
+        add_action('wp_ajax_' . self::SELECT_ACTION, [$this, 'handle_select']);
+        add_action('wp_ajax_nopriv_' . self::SELECT_ACTION, [$this, 'handle_select']);
     }
 
     public function register_assets(): void
@@ -94,6 +99,7 @@ final class Prodexa_AI_Storefront
      *   ajaxUrl: string,
      *   nonce: string,
      *   action: string,
+     *   selectAction: string,
      *   i18n: array<string, string>
      * }
      */
@@ -103,6 +109,7 @@ final class Prodexa_AI_Storefront
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce(self::NONCE_ACTION),
             'action' => self::AJAX_ACTION,
+            'selectAction' => self::SELECT_ACTION,
             'i18n' => [
                 'loading' => __('Searching…', 'prodexa-ai'),
                 'empty' => __('No products matched that search.', 'prodexa-ai'),
@@ -115,6 +122,10 @@ final class Prodexa_AI_Storefront
                 'preorder' => __('Preorder', 'prodexa-ai'),
                 'unknown' => __('Availability unknown', 'prodexa-ai'),
                 'image_unavailable' => __('No image', 'prodexa-ai'),
+                'select' => __('Select', 'prodexa-ai'),
+                'selecting' => __('Selecting…', 'prodexa-ai'),
+                'selected' => __('Selected', 'prodexa-ai'),
+                'select_error' => __('That offer could not be selected. The rest of the store still works.', 'prodexa-ai'),
             ],
         ];
     }
@@ -161,5 +172,72 @@ final class Prodexa_AI_Storefront
         $payload['limit'] = $parsed['limit'];
 
         wp_send_json_success($payload, 200);
+    }
+
+    public function handle_select(): void
+    {
+        check_ajax_referer(self::NONCE_ACTION, 'nonce');
+
+        $offer_id = isset($_POST['offer_id']) ? sanitize_text_field((string) wp_unslash($_POST['offer_id'])) : '';
+        $parsed = Prodexa_AI_Selection::parse_offer_id($offer_id);
+        if ($parsed['ok'] !== true) {
+            wp_send_json_error(
+                [
+                    'code' => $parsed['code'],
+                    'message' => Prodexa_AI_Selection::user_message($parsed['code'], $parsed['message']),
+                    'request_id' => null,
+                ],
+                200
+            );
+            return;
+        }
+
+        $body = [
+            'offer_id' => $parsed['offer_id'],
+            'selection_id' => Prodexa_AI_Selection::new_selection_id(),
+        ];
+        $result = $this->client->select($body);
+
+        if (!$result->ok) {
+            wp_send_json_error(
+                [
+                    'code' => $result->error_code ?? 'API_ERROR',
+                    'message' => Prodexa_AI_Selection::user_message(
+                        $result->error_code ?? 'API_ERROR',
+                        $result->message
+                    ),
+                    'request_id' => $result->request_id,
+                ],
+                200
+            );
+            return;
+        }
+
+        $projected = Prodexa_AI_Selection::project_response($result->data);
+        if ($projected === null) {
+            wp_send_json_error(
+                [
+                    'code' => 'INVALID_RESPONSE',
+                    'message' => Prodexa_AI_Selection::user_message('INVALID_RESPONSE'),
+                    'request_id' => $result->request_id,
+                ],
+                200
+            );
+            return;
+        }
+
+        if ($this->woocommerce !== null) {
+            $this->woocommerce->remember_pending($projected);
+        }
+
+        wp_send_json_success(
+            [
+                'selection_id' => $projected['selection_id'],
+                'offer_id' => $projected['offer_id'],
+                'expires_at' => $projected['expires_at'],
+                'request_id' => $result->request_id,
+            ],
+            200
+        );
     }
 }

@@ -75,7 +75,27 @@
     }
   }
 
-  function renderCard(offer) {
+  function selectedOffer(root) {
+    return text(root.getAttribute("data-selected-offer"));
+  }
+
+  function refreshSelectButtons(root, options) {
+    var busy = options && options.busy === true;
+    var activeId = options && options.activeId ? text(options.activeId) : "";
+    var selected = selectedOffer(root);
+    root.querySelectorAll("[data-prodexa-select]").forEach(function (button) {
+      var id = text(button.getAttribute("data-prodexa-select"));
+      var outOfStock = button.getAttribute("data-out-of-stock") === "1";
+      button.disabled = busy || outOfStock;
+      if (busy && id === activeId) {
+        button.textContent = i18n("selecting");
+      } else {
+        button.textContent = id === selected ? i18n("selected") : i18n("select");
+      }
+    });
+  }
+
+  function renderCard(root, offer) {
     var card = document.createElement("article");
     card.className = "prodexa-ai-search__card";
     card.setAttribute("data-offer-id", text(offer.offer_id));
@@ -112,6 +132,17 @@
     meta.textContent = availabilityLabel(offer.availability) + (freshness ? " · " + freshness : "");
     card.appendChild(meta);
 
+    var select = document.createElement("button");
+    select.type = "button";
+    select.className = "prodexa-ai-search__select";
+    select.setAttribute("data-prodexa-select", text(offer.offer_id));
+    if (text(offer.availability) === "out_of_stock") {
+      select.setAttribute("data-out-of-stock", "1");
+      select.disabled = true;
+    }
+    select.textContent = text(offer.offer_id) === selectedOffer(root) ? i18n("selected") : i18n("select");
+    card.appendChild(select);
+
     return card;
   }
 
@@ -129,7 +160,7 @@
       if (!offer || typeof offer !== "object") {
         return;
       }
-      resultsNode.appendChild(renderCard(offer));
+      resultsNode.appendChild(renderCard(root, offer));
     });
 
     var page = typeof payload.page === "number" ? payload.page : 1;
@@ -172,11 +203,13 @@
     var input = root.querySelector("[data-prodexa-query]");
     var submit = form ? form.querySelector('button[type="submit"]') : null;
     var pager = root.querySelector("[data-prodexa-pager]");
+    var resultsNode = root.querySelector("[data-prodexa-results]");
     if (!form || !input) {
       return;
     }
 
     var inFlight = false;
+    var selectInFlight = false;
     var lastQuery = "";
 
     function setBusy(busy) {
@@ -239,6 +272,49 @@
         });
     }
 
+    function selectOffer(offerId) {
+      if (offerId === "" || inFlight || selectInFlight) {
+        return;
+      }
+      selectInFlight = true;
+      refreshSelectButtons(root, { busy: true, activeId: offerId });
+      setStatus(root, i18n("selecting"), "loading");
+
+      var body = new URLSearchParams();
+      body.set("action", text(config.selectAction));
+      body.set("nonce", text(config.nonce));
+      body.set("offer_id", offerId);
+
+      fetch(text(config.ajaxUrl), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        credentials: "same-origin",
+        body: body.toString(),
+      })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (json) {
+          selectInFlight = false;
+          if (!json || json.success !== true || !json.data) {
+            var message = json && json.data && json.data.message ? json.data.message : i18n("select_error");
+            setStatus(root, message, "error");
+            refreshSelectButtons(root, { busy: false });
+            return;
+          }
+          root.setAttribute("data-selected-offer", offerId);
+          refreshSelectButtons(root, { busy: false });
+          setStatus(root, i18n("selected"), "");
+        })
+        .catch(function () {
+          selectInFlight = false;
+          refreshSelectButtons(root, { busy: false });
+          setStatus(root, i18n("select_error"), "error");
+        });
+    }
+
     form.addEventListener("submit", function (event) {
       event.preventDefault();
       search(1);
@@ -258,6 +334,16 @@
           input.value = lastQuery;
         }
         search(nextPage);
+      });
+    }
+
+    if (resultsNode) {
+      resultsNode.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-prodexa-select]");
+        if (!button || button.disabled) {
+          return;
+        }
+        selectOffer(text(button.getAttribute("data-prodexa-select")));
       });
     }
   }

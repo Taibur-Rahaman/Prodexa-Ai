@@ -33,8 +33,10 @@ final class Prodexa_AI_Plugin
         $this->settings = new Prodexa_AI_Settings();
         $client = new Prodexa_AI_Api_Client($this->settings);
         $license = new Prodexa_AI_License($this->settings, $client);
-        $storefront = new Prodexa_AI_Storefront($this->settings, $client);
+        $woocommerce = new Prodexa_AI_WooCommerce($client);
+        $storefront = new Prodexa_AI_Storefront($this->settings, $client, $woocommerce);
         $storefront->register();
+        $woocommerce->register();
 
         if (is_admin()) {
             $admin = new Prodexa_AI_Admin($this->settings, $client, $license);

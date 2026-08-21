@@ -91,6 +91,11 @@ function add_action(string $hook, callable $callback, int $priority = 10, int $a
     Prodexa_AI_Test_State::$actions[$hook][] = $callback;
 }
 
+function add_filter(string $hook, callable $callback, int $priority = 10, int $accepted_args = 1): void
+{
+    add_action($hook, $callback, $priority, $accepted_args);
+}
+
 function do_action(string $hook): void
 {
     foreach (Prodexa_AI_Test_State::$actions[$hook] ?? [] as $callback) {

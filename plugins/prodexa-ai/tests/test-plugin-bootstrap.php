@@ -67,3 +67,12 @@ do_action('plugins_loaded');
 $t::assert_true(function_exists('prodexa_ai'), 'plugin function is available after load');
 $t::assert_true(prodexa_ai() instanceof Prodexa_AI_Plugin, 'plugin instance boots');
 $t::assert_true(isset(Prodexa_AI_Test_State::$shortcodes['prodexa_search']), 'storefront shortcode registers on the frontend');
+$t::assert_true(isset(Prodexa_AI_Test_State::$actions['wp_ajax_prodexa_ai_select']), 'select AJAX registers on boot');
+$t::assert_true(
+    isset(Prodexa_AI_Test_State::$actions['woocommerce_checkout_create_order']),
+    'WooCommerce create-order hook registers on boot'
+);
+$t::assert_true(
+    isset(Prodexa_AI_Test_State::$actions['woocommerce_store_api_checkout_update_order_from_request']),
+    'WooCommerce store API hook registers on boot'
+);

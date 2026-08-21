@@ -19,7 +19,9 @@ $files = [
     __DIR__ . '/test-settings.php',
     __DIR__ . '/test-api-client.php',
     __DIR__ . '/test-discovery.php',
+    __DIR__ . '/test-selection.php',
     __DIR__ . '/test-storefront.php',
+    __DIR__ . '/test-woocommerce.php',
     __DIR__ . '/test-security.php',
     __DIR__ . '/test-plugin-bootstrap.php',
 ];

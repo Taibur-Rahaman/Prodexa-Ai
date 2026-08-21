@@ -3,7 +3,7 @@ Contributors: prodexa
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,8 +23,9 @@ This release includes:
 * GET /v1/health connectivity check
 * License status refresh via POST /v1/license/validate (display only)
 * Storefront `[prodexa_search]` UI that proxies POST /v1/discovery/search (secrets stay on the server)
+* Offer select via POST /v1/discovery/select and WooCommerce order metadata for the selection reference only
 
-Not included yet: WooCommerce checkout metadata, product sync, connectors, or AI features.
+Not included yet: payment, product sync, connectors, pricing, or AI features.
 
 == Installation ==
 
@@ -48,6 +49,9 @@ No. The Prodexa API is authoritative. Cached status in WordPress is an operator 
 On the merchant WordPress server, encrypted with keys derived from WordPress salts. It is never sent to browsers.
 
 == Changelog ==
+
+= 0.1.2 =
+* Storefront offer select and WooCommerce order metadata for a validated selection_id.
 
 = 0.1.1 =
 * Storefront discovery search shortcode and AJAX proxy for POST /v1/discovery/search.
