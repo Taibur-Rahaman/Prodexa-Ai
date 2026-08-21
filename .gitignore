@@ -1,0 +1,46 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs
+*.log
+logs/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+dist/
+build/
+coverage/
+.cache/
+.tmp/
+
+# PHP / WordPress local artifacts
+wp-content/uploads/
+wp-content/cache/
+
+# Local databases / dumps
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz
+
+# Runtime / generated files
+.tmp/
+tmp/
+
+# OS-specific
+Thumbs.db
