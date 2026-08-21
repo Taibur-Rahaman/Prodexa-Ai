@@ -141,7 +141,7 @@ describe("license validation Redis cache strategy", () => {
     db = testDb.db;
     closeDb = testDb.close;
     await migrate(db);
-  }, 60_000);
+  }, 180_000);
 
   afterAll(async () => {
     if (closeDb) {

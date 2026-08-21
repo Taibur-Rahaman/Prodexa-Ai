@@ -34,13 +34,21 @@ export function sqlClientFromPGlite(db: PGlite): SqlClient {
   return client;
 }
 
+let shared: { db: SqlClient; pglite: PGlite } | null = null;
+
 export async function createTestDatabase(): Promise<{ db: SqlClient; close: () => Promise<void> }> {
-  const pglite = new PGlite();
-  await pglite.query("SELECT 1");
+  if (!shared) {
+    const pglite = new PGlite();
+    await pglite.query("SELECT 1");
+    shared = {
+      db: sqlClientFromPGlite(pglite),
+      pglite,
+    };
+  }
   return {
-    db: sqlClientFromPGlite(pglite),
+    db: shared.db,
     close: async () => {
-      await pglite.close();
+      // Keep the in-process PGlite instance so later files do not reload WASM.
     },
   };
 }

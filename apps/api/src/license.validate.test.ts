@@ -109,9 +109,9 @@ async function seed(
       `
       INSERT INTO usage_counters (
         tenant_id, license_id, period_start, search_requests, connector_calls
-      ) VALUES ($1, $2, CURRENT_DATE, $3, 0)
+      ) VALUES ($1, $2, $4::date, $3, 0)
       `,
-      [tenantId, licenseId, overrides.searchUsed],
+      [tenantId, licenseId, overrides.searchUsed, new Date().toISOString().slice(0, 10)],
     );
   }
 
@@ -174,7 +174,7 @@ describe("POST /v1/license/validate", () => {
     db = testDb.db;
     closeDb = testDb.close;
     await migrate(db);
-  }, 60_000);
+  }, 180_000);
 
   afterAll(async () => {
     if (closeDb) {
