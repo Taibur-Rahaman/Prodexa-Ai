@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { LicenseValidationCache } from "../cache/license-validation.js";
+import { activateLicensedSite } from "../license/activate.js";
 import { AUTH_UNAUTHENTICATED, validateLicensedSite } from "../license/validate.js";
+import { deactivateLicensedSite } from "../license/deactivate.js";
 import { normalizeDomain } from "../domain/site-domain.js";
 import type { SqlClient } from "../db/sql.js";
 import { ApiError, apiError } from "../http/errors.js";
@@ -11,6 +13,12 @@ const FEATURE_PATTERN = /^[a-z][a-z0-9_.]{0,63}$/;
 type ValidateBody = {
   domain?: unknown;
   feature?: unknown;
+  tenant_id?: unknown;
+  license_id?: unknown;
+};
+
+type LifecycleBody = {
+  site_id?: unknown;
   tenant_id?: unknown;
   license_id?: unknown;
 };
@@ -29,6 +37,38 @@ function readBody(body: unknown): ValidateBody {
     throw new ApiError("VALIDATION_ERROR", "Request body must be a JSON object.", 400);
   }
   return body as ValidateBody;
+}
+
+function readLifecycleBody(body: unknown): LifecycleBody {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    throw new ApiError("VALIDATION_ERROR", "Request body must be a JSON object.", 400);
+  }
+  return body as LifecycleBody;
+}
+
+function readSiteId(value: unknown): string {
+  if (typeof value !== "string" || !SITE_ID_PATTERN.test(value)) {
+    throw new ApiError("VALIDATION_ERROR", "A valid site_id is required.", 400);
+  }
+  return value;
+}
+
+function requireAuthHeaders(request: FastifyRequest): {
+  siteId: string;
+  timestamp: string;
+  nonce: string;
+  signature: string;
+} {
+  const siteId = headerString(request, "x-prodexa-site-id");
+  const timestamp = headerString(request, "x-prodexa-timestamp");
+  const nonce = headerString(request, "x-prodexa-nonce");
+  const signature = headerString(request, "x-prodexa-signature");
+
+  if (!siteId || !timestamp || !nonce || !signature || !SITE_ID_PATTERN.test(siteId)) {
+    throw AUTH_UNAUTHENTICATED;
+  }
+
+  return { siteId, timestamp, nonce, signature };
 }
 
 export function registerLicenseRoutes(
@@ -50,15 +90,7 @@ export function registerLicenseRoutes(
       );
     }
 
-    const siteId = headerString(request, "x-prodexa-site-id");
-    const timestamp = headerString(request, "x-prodexa-timestamp");
-    const nonce = headerString(request, "x-prodexa-nonce");
-    const signature = headerString(request, "x-prodexa-signature");
-
-    if (!siteId || !timestamp || !nonce || !signature || !SITE_ID_PATTERN.test(siteId)) {
-      throw AUTH_UNAUTHENTICATED;
-    }
-
+    const auth = requireAuthHeaders(request);
     const payload = readBody(request.body);
     const domain = typeof payload.domain === "string" ? normalizeDomain(payload.domain) : null;
     if (!domain) {
@@ -77,10 +109,10 @@ export function registerLicenseRoutes(
       deps.db,
       deps.apiSigningSecret,
       {
-        siteId,
-        timestamp,
-        nonce,
-        signature,
+        siteId: auth.siteId,
+        timestamp: auth.timestamp,
+        nonce: auth.nonce,
+        signature: auth.signature,
         method: request.method,
         path: requestPath(request),
         rawBody: request.rawBody ?? "",
@@ -114,5 +146,73 @@ export function registerLicenseRoutes(
       features: decision.features,
       usage: decision.usage,
     };
+  });
+
+  app.post("/v1/license/activate", async (request) => {
+    if (!deps.db || !deps.apiSigningSecret) {
+      throw new ApiError(
+        "STORE_UNAVAILABLE",
+        "License activation is unavailable.",
+        503,
+      );
+    }
+
+    const auth = requireAuthHeaders(request);
+    const payload = readLifecycleBody(request.body);
+    const bodySiteId = readSiteId(payload.site_id);
+
+    return activateLicensedSite(
+      deps.db,
+      deps.apiSigningSecret,
+      {
+        siteId: auth.siteId,
+        timestamp: auth.timestamp,
+        nonce: auth.nonce,
+        signature: auth.signature,
+        method: request.method,
+        path: requestPath(request),
+        rawBody: request.rawBody ?? "",
+        bodySiteId,
+      },
+      {
+        timestampSkewSeconds: deps.timestampSkewSeconds,
+        rateLimitPerMinute: deps.rateLimitPerMinute,
+        cache: deps.cache,
+      },
+    );
+  });
+
+  app.post("/v1/license/deactivate", async (request) => {
+    if (!deps.db || !deps.apiSigningSecret) {
+      throw new ApiError(
+        "STORE_UNAVAILABLE",
+        "License deactivation is unavailable.",
+        503,
+      );
+    }
+
+    const auth = requireAuthHeaders(request);
+    const payload = readLifecycleBody(request.body);
+    const bodySiteId = readSiteId(payload.site_id);
+
+    return deactivateLicensedSite(
+      deps.db,
+      deps.apiSigningSecret,
+      {
+        siteId: auth.siteId,
+        timestamp: auth.timestamp,
+        nonce: auth.nonce,
+        signature: auth.signature,
+        method: request.method,
+        path: requestPath(request),
+        rawBody: request.rawBody ?? "",
+        bodySiteId,
+      },
+      {
+        timestampSkewSeconds: deps.timestampSkewSeconds,
+        rateLimitPerMinute: deps.rateLimitPerMinute,
+        cache: deps.cache,
+      },
+    );
   });
 }

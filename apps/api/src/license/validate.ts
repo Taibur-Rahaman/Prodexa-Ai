@@ -1,52 +1,24 @@
-import { decryptSecret } from "../auth/secret-box.js";
-import { signSiteRequest, signaturesMatch, timestampIsFresh } from "../auth/site-hmac.js";
 import type { LicenseValidationCache } from "../cache/license-validation.js";
 import type { SqlClient } from "../db/sql.js";
-import { isUniqueViolation } from "../db/sql.js";
 import {
   evaluateLicense,
   parseFeatureMap,
   parseUsageLimits,
   type LicenseDecision,
-  type LicenseStatus,
-  type SiteActivationStatus,
 } from "../domain/license.js";
-import { ApiError } from "../http/errors.js";
+import {
+  AUTH_UNAUTHENTICATED,
+  authenticateSiteRequest,
+  type AuthenticateSiteInput,
+} from "./authenticate.js";
 
-type SiteLicenseRow = {
-  site_id: string;
-  tenant_id: string;
-  license_id: string;
-  domain: string;
-  secret_encrypted: string;
-  site_status: string;
-  license_status: string;
-  starts_at: Date | string;
-  expires_at: Date | string | null;
-  activation_limit: number | string;
-  plan_id: string;
-  plan_code: string;
-  plan_name: string;
-  plan_updated_at: Date | string;
-  features: unknown;
-  usage_limits: unknown;
-};
+export { AUTH_UNAUTHENTICATED };
 
 type CountRow = { n: number | string };
 type UsageRow = {
   search_requests: number | string;
   connector_calls: number | string;
 };
-
-export const AUTH_UNAUTHENTICATED = new ApiError(
-  "UNAUTHENTICATED",
-  "Authentication failed.",
-  401,
-);
-
-function asDate(value: Date | string): Date {
-  return value instanceof Date ? value : new Date(value);
-}
 
 function asInt(value: number | string): number {
   return typeof value === "number" ? value : Number.parseInt(value, 10);
@@ -56,22 +28,7 @@ function utcDay(now: Date): string {
   return now.toISOString().slice(0, 10);
 }
 
-function asStatus(value: string): LicenseStatus {
-  return value as LicenseStatus;
-}
-
-function asSiteStatus(value: string): SiteActivationStatus {
-  return value === "revoked" ? "revoked" : "active";
-}
-
-export type ValidateLicenseInput = {
-  siteId: string;
-  timestamp: string;
-  nonce: string;
-  signature: string;
-  method: string;
-  path: string;
-  rawBody: string;
+export type ValidateLicenseInput = AuthenticateSiteInput & {
   domain?: string | null;
   requestedFeature: string | null;
   now?: Date;
@@ -90,120 +47,33 @@ export async function validateLicensedSite(
   options: ValidateLicenseOptions,
 ): Promise<LicenseDecision> {
   const now = input.now ?? new Date();
-  const nowSeconds = Math.floor(now.getTime() / 1000);
-
-  if (!timestampIsFresh(input.timestamp, nowSeconds, options.timestampSkewSeconds)) {
-    throw new ApiError(
-      "AUTH_EXPIRED",
-      "The request timestamp is outside the allowed window.",
-      401,
-    );
-  }
-
-  if (input.nonce.length < 8 || input.nonce.length > 128) {
-    throw AUTH_UNAUTHENTICATED;
-  }
 
   const loaded = await db.transact(async (tx) => {
-    const loaded = await tx.query<SiteLicenseRow>(
-      `
-      SELECT
-        s.site_id,
-        s.tenant_id,
-        s.license_id,
-        s.domain,
-        s.secret_encrypted,
-        s.status AS site_status,
-        l.status AS license_status,
-        l.starts_at,
-        l.expires_at,
-        l.activation_limit,
-        p.id AS plan_id,
-        p.code AS plan_code,
-        p.name AS plan_name,
-        p.updated_at AS plan_updated_at,
-        p.features,
-        p.usage_limits
-      FROM site_activations s
-      INNER JOIN licenses l
-        ON l.id = s.license_id
-        AND l.tenant_id = s.tenant_id
-      INNER JOIN plans p
-        ON p.id = l.plan_id
-      WHERE s.site_id = $1
-      `,
-      [input.siteId],
+    const site = await authenticateSiteRequest(
+      tx,
+      masterSecret,
+      {
+        siteId: input.siteId,
+        timestamp: input.timestamp,
+        nonce: input.nonce,
+        signature: input.signature,
+        method: input.method,
+        path: input.path,
+        rawBody: input.rawBody,
+      },
+      {
+        timestampSkewSeconds: options.timestampSkewSeconds,
+        rateLimitPerMinute: options.rateLimitPerMinute,
+      },
+      now,
     );
-
-    const row = loaded.rows[0];
-    if (!row) {
-      throw AUTH_UNAUTHENTICATED;
-    }
-
-    let siteSecret: string;
-    try {
-      siteSecret = decryptSecret(row.secret_encrypted, masterSecret);
-    } catch {
-      throw AUTH_UNAUTHENTICATED;
-    }
-
-    const expected = signSiteRequest(siteSecret, {
-      method: input.method,
-      path: input.path,
-      timestamp: input.timestamp,
-      nonce: input.nonce,
-      body: input.rawBody,
-      siteId: input.siteId,
-    });
-
-    if (!signaturesMatch(expected, input.signature)) {
-      throw AUTH_UNAUTHENTICATED;
-    }
-
-    try {
-      await tx.query("INSERT INTO request_nonces (site_id, nonce) VALUES ($1, $2)", [
-        input.siteId,
-        input.nonce,
-      ]);
-    } catch (error) {
-      if (isUniqueViolation(error)) {
-        throw new ApiError(
-          "AUTH_REPLAY",
-          "The request nonce has already been used.",
-          401,
-        );
-      }
-      throw error;
-    }
-
-    await tx.query(
-      "DELETE FROM request_nonces WHERE seen_at < now() - interval '15 minutes'",
-    );
-
-    const recent = await tx.query<CountRow>(
-      `
-      SELECT COUNT(*)::int AS n
-      FROM request_nonces
-      WHERE site_id = $1
-        AND seen_at > now() - interval '1 minute'
-      `,
-      [input.siteId],
-    );
-    const recentCount = asInt(recent.rows[0]?.n ?? 0);
-    if (recentCount > options.rateLimitPerMinute) {
-      throw new ApiError(
-        "RATE_LIMITED",
-        "Too many license validation requests.",
-        429,
-      );
-    }
 
     const cacheIdentity = {
-      tenantId: row.tenant_id,
-      siteId: row.site_id,
-      licenseId: row.license_id,
-      planId: row.plan_id,
-      planVersion: String(asDate(row.plan_updated_at).getTime()),
+      tenantId: site.tenantId,
+      siteId: site.siteId,
+      licenseId: site.licenseId,
+      planId: site.planId,
+      planVersion: String(site.planUpdatedAt.getTime()),
     };
     const usageDay = utcDay(now);
     const cache = options.cache ?? null;
@@ -219,7 +89,7 @@ export async function validateLicensedSite(
           AND tenant_id = $2
           AND status = 'active'
         `,
-        [row.license_id, row.tenant_id],
+        [site.licenseId, site.tenantId],
       );
 
       const usage = await tx.query<UsageRow>(
@@ -230,7 +100,7 @@ export async function validateLicensedSite(
           AND tenant_id = $2
           AND period_start = $3
         `,
-        [row.license_id, row.tenant_id, usageDay],
+        [site.licenseId, site.tenantId, usageDay],
       );
       const usageRow = usage.rows[0];
       extras = {
@@ -243,27 +113,26 @@ export async function validateLicensedSite(
       };
     }
 
-    const expiresAt = row.expires_at === null ? null : asDate(row.expires_at);
     const decision = evaluateLicense(
       {
-        tenantId: row.tenant_id,
-        licenseId: row.license_id,
-        siteId: row.site_id,
-        siteStatus: asSiteStatus(row.site_status),
-        boundDomain: row.domain,
-        requestDomain: input.domain ?? row.domain,
-        licenseStatus: asStatus(row.license_status),
-        startsAt: asDate(row.starts_at),
-        expiresAt,
-        activationLimit: asInt(row.activation_limit),
+        tenantId: site.tenantId,
+        licenseId: site.licenseId,
+        siteId: site.siteId,
+        siteStatus: site.siteStatus,
+        boundDomain: site.domain,
+        requestDomain: input.domain ?? site.domain,
+        licenseStatus: site.licenseStatus,
+        startsAt: site.startsAt,
+        expiresAt: site.expiresAt,
+        activationLimit: site.activationLimit,
         activationUsed: extras.activationUsed,
         plan: {
-          id: row.plan_id,
-          code: row.plan_code,
-          name: row.plan_name,
+          id: site.planId,
+          code: site.planCode,
+          name: site.planName,
         },
-        features: parseFeatureMap(row.features),
-        usageLimits: parseUsageLimits(row.usage_limits),
+        features: parseFeatureMap(site.features),
+        usageLimits: parseUsageLimits(site.usageLimits),
         usage: extras.usage,
         requestedFeature: input.requestedFeature,
       },
@@ -278,11 +147,11 @@ export async function validateLicensedSite(
         WHERE site_id = $2
           AND tenant_id = $3
         `,
-        [now.toISOString(), row.site_id, row.tenant_id],
+        [now.toISOString(), site.siteId, site.tenantId],
       );
     }
 
-    return { decision, cacheIdentity, extras, cacheHit, expiresAt };
+    return { decision, cacheIdentity, extras, cacheHit, expiresAt: site.expiresAt };
   });
 
   if (!loaded.cacheHit && options.cache) {
