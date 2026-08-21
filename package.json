@@ -13,6 +13,7 @@
     "build": "npm run build -w @prodexa/api",
     "start": "npm run start -w @prodexa/api",
     "test": "npm run test -w @prodexa/api",
+    "test:plugin": "php plugins/prodexa-ai/tests/run.php",
     "typecheck": "npm run typecheck -w @prodexa/api",
     "migrate": "npm run migrate -w @prodexa/api"
   }

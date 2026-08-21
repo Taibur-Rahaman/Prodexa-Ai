@@ -14,6 +14,9 @@ describe("site HMAC", () => {
   it("is deterministic and rejects a mutated body", () => {
     const secret = "site-secret";
     const signature = signSiteRequest(secret, input);
+    expect(signature).toBe(
+      "b8f94e065926dd54b18e1cde9d26134f3eb901a150110dd3f54462d4c102e680",
+    );
     expect(signaturesMatch(signature, signSiteRequest(secret, input))).toBe(true);
     const mutated = signSiteRequest(secret, { ...input, body: '{"domain":"evil.example.com"}' });
     expect(signaturesMatch(signature, mutated)).toBe(false);
