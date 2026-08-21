@@ -8,7 +8,7 @@ Canonical backend domain: `prodexaai.cloud`. Do not assume `api.prodexaai.cloud`
 
 ## Status
 
-Pilot / MVP. Documentation foundation is in `docs/`. Local API: liveness plus PostgreSQL-backed `POST /v1/license/validate` with optional Redis cache. Discovery, connectors, plugin runtime, and production deploy are not implemented.
+Pilot / MVP. Documentation foundation is in `docs/`. Local API: liveness, PostgreSQL-backed `POST /v1/license/validate` with optional Redis cache, and HMAC `POST /v1/discovery/search` against a tenant-scoped offer index. Connectors, plugin runtime, and production deploy are not implemented.
 
 ## Repository layout
 
@@ -32,6 +32,7 @@ Liveness:
 License (local; requires `DATABASE_URL` + `API_SIGNING_SECRET` for a real Postgres, or `npm test` which uses PGlite). `REDIS_URL` is optional; validation works without Redis.
 
 - `POST /v1/license/validate`
+- `POST /v1/discovery/search` (searches tenant-scoped `normalized_offers`; empty until seeded or connectors exist)
 
 Bind address comes from `HOST` (default `0.0.0.0`) and `PORT` (default `8000`). Copy `.env.example` to `.env` locally. Never commit real credentials.
 

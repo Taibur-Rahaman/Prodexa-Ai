@@ -48,7 +48,13 @@ Authenticated operator health remains `GET /v1/admin/health` and is not implemen
 
 ## 5. Search Endpoint
 
+Implemented (local only; not deployed):
+
 `POST /v1/discovery/search`
+
+Protected site-HMAC endpoint (DEC-018). The server resolves tenant and license from `x-prodexa-site-id`; clients must not send `tenant_id` as authorization (ignored if present). Feature `discovery.search` is required. Daily search quota is checked and is not incremented here (usage metering remains a later task).
+
+Headers: same as `POST /v1/license/validate` (`x-prodexa-site-id`, `x-prodexa-timestamp`, `x-prodexa-nonce`, `x-prodexa-signature`, optional `x-request-id`). Search does not send `domain` in the body; license domain binding uses the site's stored activation domain.
 
 ### Request
 
@@ -63,6 +69,10 @@ Authenticated operator health remains `GET /v1/admin/health` and is not implemen
   }
 }
 ```
+
+`query` is required (trimmed, 1–200 characters, at most 12 whitespace-separated terms). `page` defaults to 1 (minimum 1). `limit` defaults to 10 (maximum 20). `context` is optional. When `context.currency` is set, results are restricted to that ISO 4217 code. `context.country` must be ISO 3166-1 alpha-2 when present; it is accepted for connector routing later and does not filter the offer index (offers have no country field).
+
+Pilot search is parameterized PostgreSQL lexical AND-match of query terms against `title` and `description` on the tenant-scoped `normalized_offers` table. Order is stable by `offer_id` (ranking is not implemented). Connectors are not implemented (T-013); an empty index returns `results: []`. Search/index technology remains unlocked in the PRD; this loop does not introduce Elasticsearch or vector search. Redis query/result cache is not implemented; `meta.cached` is always `false`. `display_price` is the server-stored offer `price` until the pricing engine exists.
 
 ### Response Shape
 
@@ -83,13 +93,29 @@ Authenticated operator health remains `GET /v1/admin/health` and is not implemen
     }
   ],
   "meta": {
-    "cached": true,
+    "cached": false,
     "count": 1
   }
 }
 ```
 
-Customer responses must not contain private source credentials, internal tenant data, or hidden operational secrets.
+`meta.count` is the number of hits on this page, not a total. Customer responses must not contain private source credentials, `source_url`, `source_id`, internal tenant data, or hidden operational secrets.
+
+Deterministic errors (standard error format):
+
+| HTTP | code | when |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | invalid JSON, query, page, limit, or context |
+| 401 | `UNAUTHENTICATED` | missing/invalid HMAC or unknown site |
+| 401 | `AUTH_EXPIRED` | timestamp outside skew window |
+| 401 | `AUTH_REPLAY` | nonce already used for this site |
+| 403 | `SITE_REVOKED` | site activation revoked |
+| 403 | `LICENSE_REVOKED` / `LICENSE_SUSPENDED` / `LICENSE_PENDING` / `LICENSE_EXPIRED` | license not usable |
+| 403 | `ACTIVATION_LIMIT_EXCEEDED` | active sites exceed limit |
+| 403 | `FEATURE_NOT_ENTITLED` | plan does not include `discovery.search` |
+| 403 | `USAGE_LIMIT_EXCEEDED` | daily search quota already exhausted |
+| 429 | `RATE_LIMITED` | too many HMAC requests for the site |
+| 503 | `STORE_UNAVAILABLE` | no PostgreSQL / signing secret configured |
 
 ## 6. Offer Selection
 

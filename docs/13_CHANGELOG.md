@@ -2,6 +2,21 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 4: Discovery search endpoint
+
+### Added
+
+- Local HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers`.
+- Parameterized lexical AND-match, page/limit pagination, customer-safe result fields.
+
+### Decision
+
+No new locked business decision. Search/index technology remains unlocked (PRD). Pilot search is PostgreSQL lexical match, not Elasticsearch or vector search. Connectors, ranking, pricing engine, and Redis search cache are not claimed.
+
+### Implementation Status
+
+Discovery search is tested locally with PGlite (normal, empty, invalid, unauthorized, pagination, tenant isolation). `POST /v1/discovery/select`, connectors, plugin, production deploy, and `api.prodexaai.cloud` are not claimed. Hostinger was not inspected or changed.
+
 ## 2026-08-21 — Loop 3: Redis cache strategy for license validation
 
 ### Added

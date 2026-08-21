@@ -22,6 +22,7 @@
 - [x] Implement tenant/site identity.
 - [x] Implement license validation.
 - [x] Implement cache layer.
+- [x] Implement discovery search endpoint (PostgreSQL lexical index; no connectors yet).
 - [ ] Implement connector interface.
 - [ ] Implement first permitted connector.
 - [x] Implement normalized offer schema (TypeScript types + validator).

@@ -7,6 +7,7 @@
 | 1 | 2026-08-21 | COMPLETE | Inspected Hostinger (read-only). Locked stack (DEC-014–017). Shipped local `GET /health` + `/v1/health`. |
 | 2 | 2026-08-21 | COMPLETE | PostgreSQL license model + HMAC `POST /v1/license/validate`. Hostinger inspected read-only; no infra change. |
 | 3 | 2026-08-21 | COMPLETE | Optional Redis cache for license validation extras (`REDIS_URL`). HMAC/replay/status stay on PostgreSQL. Hostinger unchanged. |
+| 4 | 2026-08-21 | COMPLETE | HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers`. No connectors/Hostinger change. |
 
 ## Completed
 
@@ -77,9 +78,15 @@
 - **Tests:** `apps/api/src/cache/*.test.ts`, `apps/api/src/license.cache.test.ts`
 - **Docs:** `03_ARCHITECTURE.md`, `04_API.md`
 
+### T-012 — Discovery search endpoint
+- **Priority:** P2
+- **Status:** done (local only; not deployed; no connectors)
+- **Files:** `apps/api/migrations/002_normalized_offers.sql`, `apps/api/src/routes/discovery.ts`, `apps/api/src/discovery/`
+- **Tests:** `apps/api/src/discovery.search.test.ts`, `apps/api/src/discovery/query.test.ts`
+- **Docs:** `04_API.md`, `03_ARCHITECTURE.md`
+
 ## Now
 
-- [ ] **T-012** Build discovery search endpoint. P2
 - [ ] **T-013** Build first permitted connector. P2
 - [ ] **T-014** Build WordPress plugin skeleton. P2
 

@@ -97,6 +97,8 @@ The backend is responsible for:
 9. Response is returned to WordPress.
 10. WordPress renders customer-safe fields.
 
+Pilot implementation of step 5–8: connectors, ranking, and the pricing engine are not implemented. `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `offer_id` order, and `display_price` equal to the stored offer price. An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id.
+
 ### Order
 
 1. Customer selects an offer.
@@ -138,7 +140,7 @@ Cache entries must include timestamps and freshness information.
 
 Financial values must be revalidated when necessary before final order confirmation.
 
-License validation may cache post-auth evaluation extras (activation counts and usage snapshots) in Redis. HMAC, nonce replay, site secrets, and license/site status always come from PostgreSQL. Redis is optional: if `REDIS_URL` is unset or Redis is unavailable, validation continues from PostgreSQL. Cache keys are `prodexa:v1:license:validate:{tenant}:{site}:{license}:{planId}:{planVersion}` with a 60-second TTL, capped by remaining license lifetime. Plan updates change `planVersion` (`plans.updated_at`) and miss the old key. Operators should also delete by site/license prefix after status changes; TTL is the backstop. Search/offer caches are not implemented until discovery exists.
+License validation may cache post-auth evaluation extras (activation counts and usage snapshots) in Redis. HMAC, nonce replay, site secrets, and license/site status always come from PostgreSQL. Redis is optional: if `REDIS_URL` is unset or Redis is unavailable, validation continues from PostgreSQL. Cache keys are `prodexa:v1:license:validate:{tenant}:{site}:{license}:{planId}:{planVersion}` with a 60-second TTL, capped by remaining license lifetime. Plan updates change `planVersion` (`plans.updated_at`) and miss the old key. Operators should also delete by site/license prefix after status changes; TTL is the backstop. Discovery search reads tenant-scoped `normalized_offers` from PostgreSQL. Redis query/result caches for search are not implemented; `meta.cached` is always false.
 
 ## 9. Reliability Strategy
 
@@ -200,7 +202,7 @@ Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, 
 
 - **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
 - **Plugin:** PHP on the merchant WordPress/WooCommerce site (client only).
-- **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites).
+- **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites). Tenant-scoped `normalized_offers` is the pilot discovery search corpus.
 - **Cache:** Redis via `REDIS_URL` (optional). Production uses a real Redis client (`ioredis`). License validation does not depend on Redis; PostgreSQL remains authoritative for HMAC, replay, and license status.
 - **Auth (plugin → API):** per-site HMAC-SHA256 (DEC-018); secrets stay server-side and never in the browser.
 - **Local run:** `HOST=0.0.0.0` and `PORT` from the environment. License persistence needs `DATABASE_URL` (PostgreSQL) and `API_SIGNING_SECRET`. Redis is optional (`REDIS_URL`).

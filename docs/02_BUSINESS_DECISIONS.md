@@ -158,7 +158,7 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Shared plugin-wide API key (rejected); trusting WordPress capability checks as Prodexa authorization (rejected).
 
-**Consequences:** `POST /v1/license/validate` uses this scheme (DEC-018). Discovery and usage endpoints remain unimplemented. No fake license API is provided.
+**Consequences:** `POST /v1/license/validate` and `POST /v1/discovery/search` use this scheme (DEC-018). `POST /v1/discovery/select` and usage remain unimplemented. No fake license API is provided.
 
 ## DEC-018 — Plugin-to-API HMAC Wire Format
 
@@ -170,7 +170,7 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Short-lived site bearer tokens (also allowed by DEC-017; deferred to keep validation from depending on a token issuer). Redis nonce cache (canonical cache remains Redis per DEC-015, but T-011 is a later task; durable replay records fit PostgreSQL).
 
-**Consequences:** `POST /v1/license/activate` and `POST /v1/license/deactivate` are not implemented yet. Tests use an in-process PostgreSQL engine (PGlite) against the same SQL as production `pg`. Production license data must use PostgreSQL via `DATABASE_URL`, never an in-memory license map.
+**Consequences:** `POST /v1/license/activate` and `POST /v1/license/deactivate` are not implemented yet. `POST /v1/discovery/search` reuses the same HMAC/nonce checks; the search body has no `domain` field, so license evaluation uses the site's stored activation domain. Tests use an in-process PostgreSQL engine (PGlite) against the same SQL as production `pg`. Production license and offer-index data must use PostgreSQL via `DATABASE_URL`, never an in-memory map.
 
 ## Change Protocol
 
