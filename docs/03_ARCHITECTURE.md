@@ -138,6 +138,8 @@ Cache entries must include timestamps and freshness information.
 
 Financial values must be revalidated when necessary before final order confirmation.
 
+License validation may cache post-auth evaluation extras (activation counts and usage snapshots) in Redis. HMAC, nonce replay, site secrets, and license/site status always come from PostgreSQL. Redis is optional: if `REDIS_URL` is unset or Redis is unavailable, validation continues from PostgreSQL. Cache keys are `prodexa:v1:license:validate:{tenant}:{site}:{license}:{planId}:{planVersion}` with a 60-second TTL, capped by remaining license lifetime. Plan updates change `planVersion` (`plans.updated_at`) and miss the old key. Operators should also delete by site/license prefix after status changes; TTL is the backstop. Search/offer caches are not implemented until discovery exists.
+
 ## 9. Reliability Strategy
 
 Each connector should have:
@@ -199,9 +201,9 @@ Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, 
 - **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
 - **Plugin:** PHP on the merchant WordPress/WooCommerce site (client only).
 - **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites).
-- **Cache:** Redis (canonical cache; not yet provisioned — T-011). License validation does not depend on Redis.
+- **Cache:** Redis via `REDIS_URL` (optional). Production uses a real Redis client (`ioredis`). License validation does not depend on Redis; PostgreSQL remains authoritative for HMAC, replay, and license status.
 - **Auth (plugin → API):** per-site HMAC-SHA256 (DEC-018); secrets stay server-side and never in the browser.
-- **Local run:** `HOST=0.0.0.0` and `PORT` from the environment. License persistence needs `DATABASE_URL` (PostgreSQL) and `API_SIGNING_SECRET`.
+- **Local run:** `HOST=0.0.0.0` and `PORT` from the environment. License persistence needs `DATABASE_URL` (PostgreSQL) and `API_SIGNING_SECRET`. Redis is optional (`REDIS_URL`).
 - **Production:** dedicated VPS/Docker or equivalent isolated Node runtime after human authorization. The inspected apex WordPress site on `prodexaai.cloud` is not the API.
 - **Replay / nonce store (pilot):** PostgreSQL `request_nonces`. Redis remains the canonical cache and is not required for license validation.
 

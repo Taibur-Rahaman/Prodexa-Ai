@@ -21,7 +21,7 @@
 - [x] Implement Prodexa API skeleton (health only).
 - [x] Implement tenant/site identity.
 - [x] Implement license validation.
-- [ ] Implement cache layer.
+- [x] Implement cache layer.
 - [ ] Implement connector interface.
 - [ ] Implement first permitted connector.
 - [x] Implement normalized offer schema (TypeScript types + validator).

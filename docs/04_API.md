@@ -189,6 +189,8 @@ Deterministic errors (body uses the standard error format):
 
 License endpoints must enforce domain/site binding and server-side subscription status.
 
+`POST /v1/license/validate` may read activation-count and usage snapshots from Redis after HMAC/nonce checks succeed. The JSON contract is unchanged. Cached extras TTL is 60 seconds (capped by `expires_at`). Revocation, suspension, expiry, and domain binding are re-read from PostgreSQL on every request. If Redis is unset or down, validation uses PostgreSQL only. Responses never include cache internals or secrets.
+
 ## 8. Usage
 
 `GET /v1/usage`

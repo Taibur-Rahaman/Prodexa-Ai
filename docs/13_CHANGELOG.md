@@ -2,6 +2,21 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 3: Redis cache strategy for license validation
+
+### Added
+
+- Optional Redis cache (`REDIS_URL`) with a `CacheStore` port. Production uses `ioredis` when configured; missing/down Redis fails open to PostgreSQL.
+- License validation caches activation counts and usage snapshots for 60 seconds. Keys include tenant, site, license, and plan version.
+
+### Decision
+
+No new business decision. DEC-015 (Redis as canonical cache) and DEC-018 (HMAC/nonce remain on PostgreSQL) are unchanged. License validation still does not depend on Redis.
+
+### Implementation Status
+
+Local tests cover cache hit/miss, Redis-unavailable fallback, and revocation still enforced from PostgreSQL. Search/offer caches, Hostinger Redis, and production deploy are not claimed.
+
 ## 2026-08-21 — Loop 2: PostgreSQL license model and validate API
 
 ### Added

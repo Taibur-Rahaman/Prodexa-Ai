@@ -6,6 +6,7 @@
 | --- | --- | --- | --- |
 | 1 | 2026-08-21 | COMPLETE | Inspected Hostinger (read-only). Locked stack (DEC-014–017). Shipped local `GET /health` + `/v1/health`. |
 | 2 | 2026-08-21 | COMPLETE | PostgreSQL license model + HMAC `POST /v1/license/validate`. Hostinger inspected read-only; no infra change. |
+| 3 | 2026-08-21 | COMPLETE | Optional Redis cache for license validation extras (`REDIS_URL`). HMAC/replay/status stay on PostgreSQL. Hostinger unchanged. |
 
 ## Completed
 
@@ -69,9 +70,15 @@
 - **Tests:** `apps/api/src/license.validate.test.ts`, HMAC/domain/license unit tests
 - **Docs:** `04_API.md`, DEC-018
 
+### T-011 — Cache strategy (Redis)
+- **Priority:** P2
+- **Status:** done (local optional Redis; no production Redis provisioned)
+- **Files:** `apps/api/src/cache/`, `apps/api/src/license/validate.ts`, `apps/api/src/index.ts`
+- **Tests:** `apps/api/src/cache/*.test.ts`, `apps/api/src/license.cache.test.ts`
+- **Docs:** `03_ARCHITECTURE.md`, `04_API.md`
+
 ## Now
 
-- [ ] **T-011** Implement cache strategy (Redis) when search/license persistence lands. P2
 - [ ] **T-012** Build discovery search endpoint. P2
 - [ ] **T-013** Build first permitted connector. P2
 - [ ] **T-014** Build WordPress plugin skeleton. P2
