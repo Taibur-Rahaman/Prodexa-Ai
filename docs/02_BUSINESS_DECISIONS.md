@@ -196,6 +196,66 @@ AI tools must not silently reverse a locked decision.
 
 **Consequences:** Payment, WooCommerce totals, product sync, and connectors remain unimplemented. T-013 stays BLOCKED. Connector-backed live revalidation still needs a later decision.
 
+## DEC-021 — Pricing Authority
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Prodexa backend is authoritative for the offer price. WooCommerce must never trust a client-supplied Prodexa price. WooCommerce does not independently calculate or override the Prodexa offer price.
+
+**Why:** DEC-007 requires merchant fees/margins and payable pricing to be calculated or verified server-side. Browser, checkout POST, session, and plugin fields can be manipulated. Loop 11 correctly blocked a pricing engine until this authority was locked.
+
+**Alternatives considered:** Trusting WooCommerce or browser `display_price` (rejected); letting WooCommerce recalculate or override the Prodexa offer price (rejected).
+
+**Consequences:** Order metadata, checkout POST, cart fields, and extra session keys cannot become the Prodexa offer price. Phase 1 satisfies DEC-007 by verifying the stored PostgreSQL offer price (DEC-022, DEC-024). This does not reverse DEC-007. Merchant markup formulas remain future work.
+
+## DEC-022 — Pricing Rules
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Phase 1 has NO dynamic pricing engine. `normalized_offers.price` is the authoritative stored offer price. No percentage/fixed markup rules yet. No invented formulas.
+
+**Why:** PRD FR-07 describes future merchant fee/margin rules, but no markup, tax, or formula was authorized. Inventing one would put an unaudited amount into commerce.
+
+**Alternatives considered:** Percentage markup (rejected — not decided); fixed fee (rejected); treating the PRD fee/margin example as a locked formula (rejected).
+
+**Consequences:** Customer `display_price` equals stored `normalized_offers.price` with no transformation. A later locked decision is required before any markup engine. DEC-007 remains in force for that future engine. TASKS "Add pricing engine" is deferred.
+
+## DEC-023 — Currency / Tax / Discounts / Fees
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Phase 1 Prodexa does not calculate tax, discounts, payment fees, or additional checkout fees. Preserve the offer's stored currency. WooCommerce remains responsible for its existing checkout/tax mechanics unless a future locked decision changes this.
+
+**Why:** Tax and payment fees belong to the merchant checkout (DEC-005). Prodexa must not invent them. Currency conversion was not authorized.
+
+**Alternatives considered:** A Prodexa tax engine (rejected); FX conversion (rejected); applying WooCommerce tax to a client-supplied Prodexa price (rejected — DEC-021).
+
+**Consequences:** Stored currency is returned unchanged. WooCommerce tax on ordinary catalog checkout is unchanged. Prodexa does not inject priced line items in this phase. How WooCommerce tax would apply to a future Prodexa-priced line item needs a later decision.
+
+## DEC-024 — Price Source
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Phase 1 price source is PostgreSQL `normalized_offers`. No live connector price because T-013 remains BLOCKED. Future connector-backed live price requires a separate decision.
+
+**Why:** T-013 is blocked; live connector prices cannot be guessed. Search and select already use the tenant-scoped offer index.
+
+**Alternatives considered:** Live connector fetch at search or select (rejected — T-013 blocked); client-supplied source price (rejected — DEC-021).
+
+**Consequences:** Search `display_price` and any server-side price resolution read `normalized_offers`. Connector-backed live price needs a new decision after T-013 is unblocked. T-013 stays BLOCKED.
+
+## DEC-025 — Pricing API
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Do NOT create a pricing engine or quote endpoint in Phase 1. Existing discovery/search/select remain the current contract. Selected offer price is resolved server-side from PostgreSQL when required. Do not expose a client-authoritative price.
+
+**Why:** A quote API would invent a contract. Search already returns customer-safe `display_price` from the stored offer. Select remains a selection reference (DEC-019) and must not become a price channel.
+
+**Alternatives considered:** `POST /v1/pricing/quote` (rejected); adding price to the select response (rejected — would change DEC-019); trusting a plugin-supplied price at checkout (rejected).
+
+**Consequences:** No `/v1/pricing` routes. Select response stays `selection_id`, `offer_id`, `expires_at`. Server-side code may read `normalized_offers.price` for the authenticated tenant when a later flow needs the offer price. Clients cannot submit a trusted price.
+
 ## Change Protocol
 
 Before changing a locked decision:
