@@ -158,7 +158,19 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Shared plugin-wide API key (rejected); trusting WordPress capability checks as Prodexa authorization (rejected).
 
-**Consequences:** License validation, discovery, and usage endpoints remain unimplemented until this scheme is built. No fake license API is provided in the meantime.
+**Consequences:** `POST /v1/license/validate` uses this scheme (DEC-018). Discovery and usage endpoints remain unimplemented. No fake license API is provided.
+
+## DEC-018 — Plugin-to-API HMAC Wire Format
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Protected plugin-to-API requests authenticate a site with HMAC-SHA256. Required headers: `x-prodexa-site-id`, `x-prodexa-timestamp`, `x-prodexa-nonce`, `x-prodexa-signature`, plus `x-request-id`. The canonical string is `v1`, HTTP method, path, timestamp, nonce, SHA-256 of the raw body, and site id, joined by newlines. Site secrets are stored encrypted at rest using `API_SIGNING_SECRET`. Replay is rejected via a timestamp skew window and a per-site nonce table in PostgreSQL. Browser JavaScript must not hold the site secret. A single global plugin secret is forbidden.
+
+**Why:** DEC-017 deferred the wire format until license endpoints shipped. HMAC provides site identity, rotation (re-issue site secret), revocation (site or license status), expiration (timestamp window), and replay resistance without introducing Redis or a token store in this loop.
+
+**Alternatives considered:** Short-lived site bearer tokens (also allowed by DEC-017; deferred to keep validation from depending on a token issuer). Redis nonce cache (canonical cache remains Redis per DEC-015, but T-011 is a later task; durable replay records fit PostgreSQL).
+
+**Consequences:** `POST /v1/license/activate` and `POST /v1/license/deactivate` are not implemented yet. Tests use an in-process PostgreSQL engine (PGlite) against the same SQL as production `pg`. Production license data must use PostgreSQL via `DATABASE_URL`, never an in-memory license map.
 
 ## Change Protocol
 

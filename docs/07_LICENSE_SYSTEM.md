@@ -102,3 +102,7 @@ Possible plan dimensions:
 ## Offline Behavior
 
 The system should tolerate brief Prodexa API outages without destroying the merchant storefront. However, offline grace periods must be bounded and must not undermine subscription enforcement.
+
+## Pilot implementation
+
+Durable tables live in PostgreSQL (`tenants`, `plans`, `licenses`, `site_activations`, `usage_counters`, `request_nonces`). `POST /v1/license/validate` is the first license API and uses HMAC site authentication (DEC-018). Activation and deactivation endpoints are not implemented yet; tests seed activations directly. Staging hosts are not auto-trusted — they must be activated as their own domain.

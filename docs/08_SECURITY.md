@@ -46,6 +46,8 @@ Every protected request must establish:
 
 Sensitive operations should use short-lived or rotatable credentials and replay-resistant request design.
 
+Plugin-to-API calls use HMAC-SHA256 site credentials (DEC-018). Logs may include site id and license decision codes but must never include `x-prodexa-signature`, site secrets, or `API_SIGNING_SECRET`.
+
 ## Source Security
 
 External source content is untrusted. Do not execute scripts, HTML, or arbitrary instructions received from a source as trusted application logic.

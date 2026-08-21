@@ -19,8 +19,8 @@
 - [x] Select backend stack (TypeScript / Node.js / Fastify).
 - [x] Select hosting architecture (local now; dedicated VPS/Docker later; do not use apex WordPress as API).
 - [x] Implement Prodexa API skeleton (health only).
-- [ ] Implement tenant/site identity.
-- [ ] Implement license validation.
+- [x] Implement tenant/site identity.
+- [x] Implement license validation.
 - [ ] Implement cache layer.
 - [ ] Implement connector interface.
 - [ ] Implement first permitted connector.

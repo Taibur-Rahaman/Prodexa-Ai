@@ -194,15 +194,16 @@ AI must not be trusted alone for:
 
 ## 12. Technology Selection
 
-Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, DEC-017):
+Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, DEC-017, DEC-018):
 
 - **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
 - **Plugin:** PHP on the merchant WordPress/WooCommerce site (client only).
 - **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites).
-- **Cache:** Redis, introduced with search/license persistence.
-- **Auth (plugin → API):** per-site server-side credentials; no browser-held site secret.
-- **Local run:** `HOST=0.0.0.0` and `PORT` from the environment.
+- **Cache:** Redis (canonical cache; not yet provisioned — T-011). License validation does not depend on Redis.
+- **Auth (plugin → API):** per-site HMAC-SHA256 (DEC-018); secrets stay server-side and never in the browser.
+- **Local run:** `HOST=0.0.0.0` and `PORT` from the environment. License persistence needs `DATABASE_URL` (PostgreSQL) and `API_SIGNING_SECRET`.
 - **Production:** dedicated VPS/Docker or equivalent isolated Node runtime after human authorization. The inspected apex WordPress site on `prodexaai.cloud` is not the API.
+- **Replay / nonce store (pilot):** PostgreSQL `request_nonces`. Redis remains the canonical cache and is not required for license validation.
 
 The stack must continue to support:
 

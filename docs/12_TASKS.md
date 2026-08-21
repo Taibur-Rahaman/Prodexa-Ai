@@ -5,6 +5,7 @@
 | Loop | Date | Result | Notes |
 | --- | --- | --- | --- |
 | 1 | 2026-08-21 | COMPLETE | Inspected Hostinger (read-only). Locked stack (DEC-014–017). Shipped local `GET /health` + `/v1/health`. |
+| 2 | 2026-08-21 | COMPLETE | PostgreSQL license model + HMAC `POST /v1/license/validate`. Hostinger inspected read-only; no infra change. |
 
 ## Completed
 
@@ -45,8 +46,8 @@
 
 ### T-007 — Define authentication strategy
 - **Priority:** P1
-- **Status:** done (documented, not implemented)
-- **Docs:** DEC-017, `04_API.md`
+- **Status:** done (DEC-017 + DEC-018 HMAC implemented for license validate)
+- **Docs:** DEC-017, DEC-018, `04_API.md`
 
 ### T-010 — API health endpoint
 - **Priority:** P1
@@ -54,10 +55,22 @@
 - **Files:** `apps/api/src/routes/health.ts`, `apps/api/src/app.ts`
 - **Tests:** `apps/api/src/health.test.ts`
 
+### T-008 — License database model (PostgreSQL)
+- **Priority:** P1
+- **Status:** done (local schema/migrations; no production database)
+- **Files:** `apps/api/migrations/001_license_schema.sql`, `apps/api/src/db/`
+- **Tests:** `apps/api/src/license.validate.test.ts`
+- **Docs:** `07_LICENSE_SYSTEM.md`, `03_ARCHITECTURE.md`
+
+### T-009 — Site authentication + `POST /v1/license/validate`
+- **Priority:** P1
+- **Status:** done (local only; not deployed)
+- **Files:** `apps/api/src/routes/license.ts`, `apps/api/src/license/validate.ts`, `apps/api/src/auth/`
+- **Tests:** `apps/api/src/license.validate.test.ts`, HMAC/domain/license unit tests
+- **Docs:** `04_API.md`, DEC-018
+
 ## Now
 
-- [ ] **T-008** Define license database model (PostgreSQL) and migrations. P1
-- [ ] **T-009** Implement site authentication + `POST /v1/license/validate`. P1
 - [ ] **T-011** Implement cache strategy (Redis) when search/license persistence lands. P2
 - [ ] **T-012** Build discovery search endpoint. P2
 - [ ] **T-013** Build first permitted connector. P2

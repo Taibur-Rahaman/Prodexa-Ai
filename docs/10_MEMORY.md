@@ -10,7 +10,7 @@ Prodexa AI is being built as a product-discovery engine with a WordPress/WooComm
 
 ## Current Stage
 
-Pilot-first. Last completed autonomous loop: **1**. Milestone: Phase 1 — Pilot MVP (in progress).
+Pilot-first. Last completed autonomous loop: **2**. Milestone: Phase 1 — Pilot MVP (in progress).
 
 ## Locked Architecture
 
@@ -24,8 +24,9 @@ Pilot-first. Last completed autonomous loop: **1**. Milestone: Phase 1 — Pilot
 - API runtime: TypeScript / Node.js 22+ / Fastify (`apps/api`).
 - Durable store: PostgreSQL (not shared Hostinger MySQL).
 - Cache: Redis (not yet provisioned).
-- Plugin→API auth: per-site server-side credentials; no browser-held site secret.
+- Plugin→API auth: per-site HMAC-SHA256 (DEC-018); secrets encrypted at rest; no browser-held site secret.
 - Canonical domain `prodexaai.cloud`; `api.prodexaai.cloud` does not exist.
+- License validation is local-only: PostgreSQL model + `POST /v1/license/validate`. Activate/deactivate and discovery are not implemented.
 
 ## Locked Product Principles
 
@@ -45,6 +46,7 @@ Pilot-first. Last completed autonomous loop: **1**. Milestone: Phase 1 — Pilot
 - Apex HTTPS probe returned CDN 408. Do not treat production API as live.
 - Do not delete/overwrite the apex WordPress files or create subdomains without human authorization.
 - Do not deploy discovery into that WordPress document root.
+- Loop 2 re-inspected read-only: same DNS (no `api` record), no VPS, no JS deployments, WordPress tree still on apex. No Hostinger mutations.
 
 ## Documentation Protocol
 

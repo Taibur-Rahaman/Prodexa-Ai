@@ -8,7 +8,7 @@ Canonical backend domain: `prodexaai.cloud`. Do not assume `api.prodexaai.cloud`
 
 ## Status
 
-Pilot / MVP. Documentation foundation is in `docs/`. The API currently exposes a local liveness endpoint only. License, discovery, and plugin runtime are not implemented yet.
+Pilot / MVP. Documentation foundation is in `docs/`. Local API: liveness plus PostgreSQL-backed `POST /v1/license/validate`. Discovery, connectors, plugin runtime, and production deploy are not implemented.
 
 ## Repository layout
 
@@ -28,6 +28,10 @@ Liveness:
 
 - `GET /health`
 - `GET /v1/health`
+
+License (local; requires `DATABASE_URL` + `API_SIGNING_SECRET` for a real Postgres, or `npm test` which uses PGlite):
+
+- `POST /v1/license/validate`
 
 Bind address comes from `HOST` (default `0.0.0.0`) and `PORT` (default `8000`). Copy `.env.example` to `.env` locally. Never commit real credentials.
 

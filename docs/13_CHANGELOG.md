@@ -2,6 +2,22 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 2: PostgreSQL license model and validate API
+
+### Added
+
+- PostgreSQL license schema/migrations (`tenants`, `plans`, `licenses`, `site_activations`, `usage_counters`, `request_nonces`).
+- Site HMAC-SHA256 authentication (DEC-018).
+- Local `POST /v1/license/validate` with deterministic license/auth errors.
+
+### Decision
+
+Locked DEC-018 (HMAC wire format, encrypted site secrets, PostgreSQL nonce replay). Redis is still not provisioned.
+
+### Implementation Status
+
+License validation is tested locally (including PGlite-backed integration tests). Activate/deactivate, discovery, plugin, production deploy, and `api.prodexaai.cloud` are not claimed. Hostinger was inspected read-only; no DNS, files, or VPS changes.
+
 ## 2026-08-21 — Loop 1: API skeleton and stack lock
 
 ### Added

@@ -45,6 +45,8 @@ Never assume an IP, document root, deployment path, runtime, or existing service
 
 The API in `apps/api` binds to `0.0.0.0:$PORT` (default port `8000`). A successful local `GET /health` does not prove production deployment.
 
+License validation (`POST /v1/license/validate`) requires a local PostgreSQL `DATABASE_URL` and `API_SIGNING_SECRET`. Automated tests use PGlite (in-process PostgreSQL) and do not use Hostinger databases. No production PostgreSQL exists on this account yet.
+
 ## Environment Separation
 
 Keep local, development, staging, and production configuration separate. Real production credentials must never be committed to Git or placed in documentation.
