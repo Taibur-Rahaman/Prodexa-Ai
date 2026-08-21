@@ -3,11 +3,32 @@ export type AppConfig = {
   host: string;
   port: number;
   logLevel: "fatal" | "error" | "warn" | "info" | "debug" | "trace";
+  databaseUrl: string | null;
+  apiSigningSecret: string | null;
+  authTimestampSkewSeconds: number;
+  validateRateLimitPerMinute: number;
 };
 
-function readEnv(name: string, fallback: string): string {
-  const value = process.env[name];
+function readEnv(name: string, env: NodeJS.ProcessEnv, fallback: string): string {
+  const value = env[name];
   return value && value.length > 0 ? value : fallback;
+}
+
+function readOptional(name: string, env: NodeJS.ProcessEnv): string | null {
+  const value = env[name];
+  return value && value.length > 0 ? value : null;
+}
+
+function readPositiveInt(name: string, env: NodeJS.ProcessEnv, fallback: number): number {
+  const raw = env[name];
+  if (!raw) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return parsed;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -24,7 +45,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   return {
     env: envName,
-    host: readEnv("HOST", "0.0.0.0"),
+    host: readEnv("HOST", env, "0.0.0.0"),
     port,
     logLevel:
       env.LOG_LEVEL === "fatal" ||
@@ -34,5 +55,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       env.LOG_LEVEL === "trace"
         ? env.LOG_LEVEL
         : "info",
+    databaseUrl: readOptional("DATABASE_URL", env),
+    apiSigningSecret: readOptional("API_SIGNING_SECRET", env),
+    authTimestampSkewSeconds: readPositiveInt("AUTH_TIMESTAMP_SKEW_SECONDS", env, 300),
+    validateRateLimitPerMinute: readPositiveInt("VALIDATE_RATE_LIMIT_PER_MINUTE", env, 60),
   };
 }

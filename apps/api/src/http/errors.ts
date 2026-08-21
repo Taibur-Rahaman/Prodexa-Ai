@@ -6,6 +6,18 @@ export type ApiErrorBody = {
   };
 };
 
+export class ApiError extends Error {
+  readonly code: string;
+  readonly statusCode: number;
+
+  constructor(code: string, message: string, statusCode: number) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.statusCode = statusCode;
+  }
+}
+
 export function apiError(
   code: string,
   message: string,

@@ -1,8 +1,10 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import helmet from "@fastify/helmet";
 import type { AppConfig } from "./config.js";
-import { apiError } from "./http/errors.js";
+import type { SqlClient } from "./db/sql.js";
+import { ApiError, apiError } from "./http/errors.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerLicenseRoutes } from "./routes/license.js";
 
 function statusCodeFrom(error: unknown): number {
   if (
@@ -31,7 +33,14 @@ function messageFrom(error: unknown): string {
   return "The request could not be processed.";
 }
 
-export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
+export type AppDependencies = {
+  db?: SqlClient | null;
+};
+
+export async function buildApp(
+  config: AppConfig,
+  deps: AppDependencies = {},
+): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
       level: config.env === "test" ? "silent" : config.logLevel,
@@ -41,6 +50,7 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
           "req.headers.cookie",
           "req.headers['x-api-key']",
           "req.headers['x-prodexa-secret']",
+          "req.headers['x-prodexa-signature']",
         ],
         remove: true,
       },
@@ -59,12 +69,38 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
     contentSecurityPolicy: false,
   });
 
+  app.decorateRequest("rawBody", "");
+
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "string" },
+    (request, body, done) => {
+      const raw = typeof body === "string" ? body : "";
+      request.rawBody = raw;
+      if (raw.length === 0) {
+        done(null, {});
+        return;
+      }
+      try {
+        done(null, JSON.parse(raw) as unknown);
+      } catch {
+        done(new ApiError("VALIDATION_ERROR", "Request body must be valid JSON.", 400));
+      }
+    },
+  );
+
   app.addHook("onSend", async (request, reply, payload) => {
     reply.header("x-request-id", request.id);
     return payload;
   });
 
   await registerHealthRoutes(app);
+  registerLicenseRoutes(app, {
+    db: deps.db ?? null,
+    apiSigningSecret: config.apiSigningSecret,
+    timestampSkewSeconds: config.authTimestampSkewSeconds,
+    rateLimitPerMinute: config.validateRateLimitPerMinute,
+  });
 
   app.setNotFoundHandler((request, reply) => {
     reply.status(404).send(
@@ -73,13 +109,21 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   });
 
   app.setErrorHandler((error: unknown, request, reply) => {
+    if (error instanceof ApiError) {
+      if (error.statusCode >= 500) {
+        request.log.error({ err: error, code: error.code }, "api_error");
+      } else {
+        request.log.warn({ code: error.code }, "api_error");
+      }
+      reply.status(error.statusCode).send(apiError(error.code, error.message, request.id));
+      return;
+    }
+
     request.log.error({ err: error }, "unhandled_error");
     const statusCode = statusCodeFrom(error);
     const code = statusCode >= 500 ? "INTERNAL_ERROR" : "REQUEST_ERROR";
     const message =
-      statusCode >= 500
-        ? "An unexpected error occurred."
-        : messageFrom(error);
+      statusCode >= 500 ? "An unexpected error occurred." : messageFrom(error);
     reply.status(statusCode).send(apiError(code, message, request.id));
   });
 
