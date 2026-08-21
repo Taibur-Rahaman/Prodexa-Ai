@@ -187,13 +187,10 @@ Deterministic errors (standard error format):
 Implemented:
 
 - `POST /v1/license/validate`
+- `POST /v1/license/activate` (DEC-027)
+- `POST /v1/license/deactivate` (DEC-027)
 
-Not implemented:
-
-- `POST /v1/license/activate`
-- `POST /v1/license/deactivate`
-
-Validate is a protected site-authenticated endpoint. The server is authoritative for tenant, license, activation, expiration, status, feature entitlement, usage snapshot, and revocation. Clients must not send `tenant_id` as authorization; any such field is ignored.
+Validate is a protected site-authenticated endpoint. The server is authoritative for tenant, license, activation, expiration, status, feature entitlement, usage snapshot, and revocation. Clients must not send `tenant_id` as authorization; any such field is ignored. Activate and deactivate reuse the same HMAC/nonce model; they do not change validate semantics.
 
 ### `POST /v1/license/validate`
 
@@ -275,6 +272,82 @@ Deterministic errors (body uses the standard error format):
 License endpoints must enforce domain/site binding and server-side subscription status.
 
 `POST /v1/license/validate` may read activation-count and usage snapshots from Redis after HMAC/nonce checks succeed. The JSON contract is unchanged. Cached extras TTL is 60 seconds (capped by `expires_at`). Revocation, suspension, expiry, and domain binding are re-read from PostgreSQL on every request. If Redis is unset or down, validation uses PostgreSQL only. Responses never include cache internals or secrets.
+
+### `POST /v1/license/activate`
+
+Binds an authorized WordPress/site installation to its existing license (DEC-027). Requires a pre-provisioned `site_activations` row so HMAC can authenticate. Tenant and license are derived server-side from that row. Clients must not send `tenant_id` as authorization (ignored if present).
+
+Headers: same as validate (`x-prodexa-site-id`, `x-prodexa-timestamp`, `x-prodexa-nonce`, `x-prodexa-signature`, optional `x-request-id`).
+
+Request:
+
+```json
+{
+  "site_id": "sit_..."
+}
+```
+
+`site_id` is required and must equal the authenticated `x-prodexa-site-id`.
+
+Success `200`:
+
+```json
+{
+  "activated": true,
+  "site_id": "sit_..."
+}
+```
+
+Idempotent when the same tenant + site + license is already `active`. Reactivating a `revoked` site checks `licenses.activation_limit` against other active sites for that license. Does not mint secrets, return license keys, or create billing/subscription state. Successful activation count changes invalidate Redis license-validation cache for the license when Redis is configured.
+
+| HTTP | code | when |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | invalid JSON or `site_id` |
+| 401 | `UNAUTHENTICATED` | missing/invalid HMAC or unknown site |
+| 401 | `AUTH_EXPIRED` | timestamp outside skew window |
+| 401 | `AUTH_REPLAY` | nonce already used for this site |
+| 403 | `SITE_MISMATCH` | body `site_id` ≠ authenticated site |
+| 404 | `ASSOCIATION_NOT_FOUND` | license/site association missing after auth |
+| 409 | `ACTIVATION_LIMIT_EXCEEDED` | active sites would exceed `licenses.activation_limit` |
+| 422 | `LICENSE_NOT_ACTIVATABLE` | license revoked, suspended, pending, or expired |
+| 429 | `RATE_LIMITED` | too many HMAC requests for the site |
+| 503 | `STORE_UNAVAILABLE` | no PostgreSQL / signing secret configured |
+
+### `POST /v1/license/deactivate`
+
+Removes the active association between the authenticated site and its license (DEC-027). Sets `site_activations.status` to `revoked` (existing inactive state). Does not delete the site row, the license, or historical usage records.
+
+Headers: same as validate.
+
+Request:
+
+```json
+{
+  "site_id": "sit_..."
+}
+```
+
+Success `200`:
+
+```json
+{
+  "deactivated": true,
+  "site_id": "sit_..."
+}
+```
+
+Idempotent when already inactive (`revoked`). Successful status changes invalidate Redis license-validation cache for the license when Redis is configured. Secrets are never returned.
+
+| HTTP | code | when |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | invalid JSON or `site_id` |
+| 401 | `UNAUTHENTICATED` | missing/invalid HMAC or unknown site |
+| 401 | `AUTH_EXPIRED` | timestamp outside skew window |
+| 401 | `AUTH_REPLAY` | nonce already used for this site |
+| 403 | `SITE_MISMATCH` | body `site_id` ≠ authenticated site |
+| 404 | `ASSOCIATION_NOT_FOUND` | license/site association missing after auth |
+| 429 | `RATE_LIMITED` | too many HMAC requests for the site |
+| 503 | `STORE_UNAVAILABLE` | no PostgreSQL / signing secret configured |
 
 ## 8. Usage
 

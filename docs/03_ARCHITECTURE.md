@@ -63,7 +63,7 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
-Pilot implementation (T-014 / T-015 / T-017): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search`, offer select via HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for the validated selection reference. HMAC secrets stay in PHP. Payment, product sync, ranking, and connectors are not implemented. Ranking is not a Phase 1 MVP contract (DEC-026). There is no dynamic pricing engine (DEC-022, DEC-025). Cached license state in WordPress is never treated as authorization. Order meta is never treated as authorization for price, license, tenant, or payment. Client-supplied Prodexa prices are never trusted (DEC-021).
+Pilot implementation (T-014 / T-015 / T-017): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search`, offer select via HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for the validated selection reference. HMAC secrets stay in PHP. Payment, product sync, ranking, and connectors are not implemented. Ranking is not a Phase 1 MVP contract (DEC-026). There is no dynamic pricing engine (DEC-022, DEC-025). Cached license state in WordPress is never treated as authorization. Order meta is never treated as authorization for price, license, tenant, or payment. Client-supplied Prodexa prices are never trusted (DEC-021). Backend license activate/deactivate exist (DEC-027); the plugin does not call them yet.
 
 ## 5. Backend Responsibilities
 
@@ -71,6 +71,7 @@ The backend is responsible for:
 
 - Authentication and tenant identification.
 - License validation.
+- License activation and deactivation (DEC-027).
 - Rate limiting.
 - Search orchestration.
 - Parallel source retrieval.
@@ -155,7 +156,7 @@ Cache entries must include timestamps and freshness information.
 
 Financial values must be revalidated when necessary before final order confirmation.
 
-License validation may cache post-auth evaluation extras (activation counts and usage snapshots) in Redis. HMAC, nonce replay, site secrets, and license/site status always come from PostgreSQL. Redis is optional: if `REDIS_URL` is unset or Redis is unavailable, validation continues from PostgreSQL. Cache keys are `prodexa:v1:license:validate:{tenant}:{site}:{license}:{planId}:{planVersion}` with a 60-second TTL, capped by remaining license lifetime. Plan updates change `planVersion` (`plans.updated_at`) and miss the old key. Operators should also delete by site/license prefix after status changes; TTL is the backstop. Discovery search reads tenant-scoped `normalized_offers` from PostgreSQL. Redis query/result caches for search are not implemented; `meta.cached` is always false. Discovery select persists to PostgreSQL `discovery_selections`; there is no Redis selection cache.
+License validation may cache post-auth evaluation extras (activation counts and usage snapshots) in Redis. HMAC, nonce replay, site secrets, and license/site status always come from PostgreSQL. Redis is optional: if `REDIS_URL` is unset or Redis is unavailable, validation continues from PostgreSQL. Cache keys are `prodexa:v1:license:validate:{tenant}:{site}:{license}:{planId}:{planVersion}` with a 60-second TTL, capped by remaining license lifetime. Plan updates change `planVersion` (`plans.updated_at`) and miss the old key. `POST /v1/license/activate` and `POST /v1/license/deactivate` invalidate license-scoped validation cache entries when the activation status changes (DEC-027). Operators should also delete by site/license prefix after status changes; TTL is the backstop. Discovery search reads tenant-scoped `normalized_offers` from PostgreSQL. Redis query/result caches for search are not implemented; `meta.cached` is always false. Discovery select persists to PostgreSQL `discovery_selections`; there is no Redis selection cache.
 
 ## 9. Reliability Strategy
 

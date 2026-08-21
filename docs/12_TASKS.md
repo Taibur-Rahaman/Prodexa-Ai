@@ -16,6 +16,7 @@
 | 12 | 2026-08-21 | COMPLETE | Locked DEC-021–025. Phase 1 stored PostgreSQL price; no dynamic engine or quote API. T-013 remains BLOCKED. Hostinger unchanged. |
 | 13 | 2026-08-22 | NEEDS_DECISION | Ranking unspecified. No ranking code. HEAD remained Loop 12 / T-018. |
 | 14 | 2026-08-22 | NEEDS_DECISION | Locked DEC-026. Ranking deferred; discovery stays `ORDER BY offer_id ASC`. Next Phase 1 task has no acceptance criteria. T-013 remains BLOCKED. Hostinger unchanged. |
+| 15 | 2026-08-22 | COMPLETE | Locked DEC-027. HMAC `POST /v1/license/activate` + `/deactivate`. Validate unchanged. T-013 remains BLOCKED. Hostinger unchanged. |
 
 ## Completed
 
@@ -127,6 +128,13 @@
 - **Files:** `apps/api/src/discovery/stored-price.ts`, `apps/api/src/discovery/search.ts`, `apps/api/src/discovery/select.ts`, plugin selection/order metadata (unchanged trust model)
 - **Tests:** `apps/api/src/discovery/stored-price.test.ts`, search/select client-price ignore tests, plugin select/order meta price stripping
 - **Docs:** DEC-021–025, `04_API.md`, `03_ARCHITECTURE.md`, `05_WORDPRESS_PLUGIN.md`
+
+### T-019 — License activation / deactivation lifecycle
+- **Priority:** P1
+- **Status:** done (local only; not deployed; no billing)
+- **Files:** `apps/api/src/license/authenticate.ts`, `apps/api/src/license/activate.ts`, `apps/api/src/license/deactivate.ts`, `apps/api/src/routes/license.ts`, `apps/api/src/license/validate.ts` (shared HMAC helper)
+- **Tests:** `apps/api/src/license.lifecycle.test.ts`
+- **Docs:** DEC-027, `04_API.md`, `07_LICENSE_SYSTEM.md`, `08_SECURITY.md`
 
 ## Now
 

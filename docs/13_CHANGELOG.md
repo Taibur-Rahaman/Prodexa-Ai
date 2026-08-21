@@ -2,6 +2,23 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-22 — Loop 15: License activation lifecycle
+
+### Added
+
+- Locked DEC-027: HMAC `POST /v1/license/activate` and `POST /v1/license/deactivate`.
+- Shared site HMAC authenticator used by validate/activate/deactivate.
+- Activation uses existing `licenses.activation_limit`; deactivation sets `site_activations.status` to `revoked` without deleting historical rows.
+- Lifecycle tests: valid/idempotent activate, invalid license, tenant isolation, invalid auth, valid/idempotent deactivate, historical preservation, activation-limit conflict.
+
+### Decision
+
+Locked DEC-027. Validate semantics unchanged. No billing/payment. No invented quotas. T-013 remains BLOCKED.
+
+### Implementation Status
+
+Local API only. Plugin does not call activate/deactivate yet. No connector, ranking, pricing engine, payment, production deploy, or `api.prodexaai.cloud`. Hostinger was not inspected or changed. Apex `prodexaai.cloud` WordPress was not modified.
+
 ## 2026-08-22 — Loop 14: Phase 1 ranking deferred
 
 ### Added

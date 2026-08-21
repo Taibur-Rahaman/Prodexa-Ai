@@ -158,7 +158,7 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Shared plugin-wide API key (rejected); trusting WordPress capability checks as Prodexa authorization (rejected).
 
-**Consequences:** `POST /v1/license/validate`, `POST /v1/discovery/search`, and `POST /v1/discovery/select` use this scheme (DEC-018). Usage remains unimplemented. No fake license API is provided.
+**Consequences:** `POST /v1/license/validate`, `POST /v1/license/activate`, `POST /v1/license/deactivate`, `POST /v1/discovery/search`, and `POST /v1/discovery/select` use this scheme (DEC-018, DEC-027). Usage remains unimplemented. No fake license API is provided.
 
 ## DEC-018 — Plugin-to-API HMAC Wire Format
 
@@ -170,7 +170,7 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Short-lived site bearer tokens (also allowed by DEC-017; deferred to keep validation from depending on a token issuer). Redis nonce cache (canonical cache remains Redis per DEC-015, but T-011 is a later task; durable replay records fit PostgreSQL).
 
-**Consequences:** `POST /v1/license/activate` and `POST /v1/license/deactivate` are not implemented yet. `POST /v1/discovery/search` and `POST /v1/discovery/select` reuse the same HMAC/nonce checks; those bodies have no `domain` field, so license evaluation uses the site's stored activation domain. Tests use an in-process PostgreSQL engine (PGlite) against the same SQL as production `pg`. Production license, offer-index, and selection data must use PostgreSQL via `DATABASE_URL`, never an in-memory map.
+**Consequences:** `POST /v1/license/activate` and `POST /v1/license/deactivate` reuse the same HMAC/nonce checks (DEC-027). `POST /v1/discovery/search` and `POST /v1/discovery/select` reuse the same HMAC/nonce checks; those bodies have no `domain` field, so license evaluation uses the site's stored activation domain. Tests use an in-process PostgreSQL engine (PGlite) against the same SQL as production `pg`. Production license, offer-index, and selection data must use PostgreSQL via `DATABASE_URL`, never an in-memory map.
 
 ## DEC-019 — Discovery Select Contract
 
@@ -267,6 +267,24 @@ AI tools must not silently reverse a locked decision.
 **Alternatives considered:** Relevance ranking (rejected — not specified); price competitiveness ranking (rejected — no price-based ranking in Phase 1; DEC-022 has no pricing engine); ML/AI ranking (rejected — DEC-009 plus no ranking contract); client `sort` parameter (rejected); sponsored or personalized ranking (rejected).
 
 **Consequences:** Do not modify discovery search behavior. Do not add ranking code. TASKS "Add ranking baseline" is deferred. T-013 stays BLOCKED. Search continues to return lexical AND-match results in stable `offer_id` order.
+
+## DEC-027 — License Activation Lifecycle
+
+**Status:** LOCKED  
+**Date:** 2026-08-22  
+**Decision:** License activation and deactivation use HMAC site authentication and the existing PostgreSQL `site_activations` / `licenses.activation_limit` model.
+
+Activation is `POST /v1/license/activate` with body `{ "site_id": "<authenticated site identity>" }`. Tenant and license identity are resolved server-side from the authenticated site. Clients must never control `tenant_id`. Activation verifies the license exists, is valid, and is allowed to activate. It is idempotent for the same tenant + site + license. Activation limits use `licenses.activation_limit` (already defined). Inactive site status in the existing schema is `revoked`. No new billing/subscription/payment behavior.
+
+Deactivation is `POST /v1/license/deactivate` with the same body shape. It is tenant-scoped via HMAC, idempotent when already inactive, and must not delete the site row, license, or historical usage records. Existing inactive state is `site_activations.status = 'revoked'`.
+
+Responses are `{ "activated": true, "site_id": "…" }` and `{ "deactivated": true, "site_id": "…" }`. Errors: `400` invalid request, `401` auth failure, `403` authorization/site mismatch, `404` association not found where applicable, `409` activation limit/conflict, `422` license not activatable. Secrets and license keys are never returned. `POST /v1/license/validate` semantics are unchanged.
+
+**Why:** Loop 15 requires a minimum activation/deactivation lifecycle. The site credential and license binding already exist in PostgreSQL; inventing bootstrap-from-license-key, new quotas, or billing would invent contracts.
+
+**Alternatives considered:** Creating a new `inactive` site status (rejected — existing model uses `active`/`revoked`); inventing activation quotas beyond `licenses.activation_limit` (rejected); accepting client `tenant_id` (rejected); changing validate semantics (rejected).
+
+**Consequences:** Activate/deactivate require a pre-provisioned `site_activations` row (HMAC identity). Bootstrap provisioning that mints site secrets from a license key remains a later task. T-013 stays BLOCKED. No billing/payment.
 
 ## Change Protocol
 

@@ -70,7 +70,7 @@ Shipped in `plugins/prodexa-ai/`:
 - Site secret and license key are encrypted at rest with a key derived from WordPress salts. Password fields are never prefilled. Secrets are never localized into JavaScript.
 - HTTP client with timeouts, no redirects, HMAC-SHA256 for protected routes (DEC-018). `GET /v1/health` is unsigned. `POST /v1/license/validate`, `POST /v1/discovery/search`, and `POST /v1/discovery/select` are signed when credentials exist.
 - Cached license snapshot is operator display only. `Prodexa_AI_License::cached_state_authorizes_access()` is always false. The API remains authoritative.
-- `POST /v1/license/activate` and `POST /v1/license/deactivate` are not called; stored license keys wait for those endpoints.
+- `POST /v1/license/activate` and `POST /v1/license/deactivate` exist on the API (DEC-027) but are not called by the plugin yet; stored license keys wait for plugin wire-up.
 
 ## Storefront search (T-015)
 
@@ -103,13 +103,15 @@ Run `php plugins/prodexa-ai/tests/run.php` (no WordPress install required). Do n
 
 ## License Behavior
 
-On activation (target flow; `POST /v1/license/activate` is not implemented yet):
+On activation (target plugin flow; API endpoints exist per DEC-027; plugin does not call them yet):
 
 1. Merchant enters license key.
 2. Plugin sends license/site information to Prodexa API.
 3. Server validates subscription.
 4. Server returns only the minimum information needed by the plugin.
 5. Plugin stores non-secret activation state securely.
+
+The current API activate contract authenticates an existing site via HMAC and body `{ site_id }` only (tenant/license server-resolved). Bootstrap that mints site secrets from a license key alone remains future work.
 
 The T-014 skeleton stores the license key sealed on the merchant server and can refresh status via `POST /v1/license/validate`. It does not treat a stored key or cached snapshot as authorization.
 
