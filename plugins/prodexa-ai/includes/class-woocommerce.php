@@ -3,6 +3,7 @@
  * WooCommerce order metadata for a validated Prodexa selection reference (DEC-020).
  *
  * Does not implement payment, pricing, product sync, or checkout totals.
+ * Client-supplied Prodexa prices are never trusted (DEC-021).
  *
  * @package Prodexa_AI
  */

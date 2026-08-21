@@ -60,6 +60,7 @@ $t::assert_same(
     'order meta is only the selection reference'
 );
 $t::assert_false(in_array('_prodexa_offer_id', array_keys($meta), true), 'offer_id is not order meta');
+$t::assert_false(in_array('_prodexa_price', array_keys($meta), true), 'price is not order meta');
 
 $t::assert_same(
     'That selection has expired. Search again and choose the offer.',

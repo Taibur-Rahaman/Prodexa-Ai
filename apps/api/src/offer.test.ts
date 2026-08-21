@@ -43,6 +43,7 @@ describe("normalized offer schema", () => {
       retrieved_at: valid.retrieved_at,
     });
     expect(customer.display_price).toBe(1000);
+    expect(customer.display_price).toBe(valid.price);
     expect(customer.freshness.retrieved_at).toBe(valid.retrieved_at);
     expect(JSON.stringify(customer)).not.toMatch(/source_url|source_id|external_product/);
   });

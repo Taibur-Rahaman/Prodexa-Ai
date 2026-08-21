@@ -9,6 +9,9 @@ describe("parseSelectBody", () => {
         offer_id: "off_00000000-0000-4000-8000-000000000001",
         selection_id: "sel_idempotency_key_1",
         tenant_id: "should-be-ignored",
+        price: 1,
+        display_price: 1,
+        currency: "USD",
       }),
     ).toEqual({
       offerId: "off_00000000-0000-4000-8000-000000000001",

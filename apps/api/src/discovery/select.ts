@@ -96,6 +96,7 @@ function readSelectionId(value: unknown): string {
 
 export function parseSelectBody(body: unknown): SelectInput {
   const payload = readBody(body);
+  // Client-supplied price, currency, and tenant_id are ignored (DEC-021, DEC-025).
   return {
     offerId: readOfferId(payload.offer_id),
     selectionId: readSelectionId(payload.selection_id),

@@ -36,6 +36,7 @@ export type CustomerDiscoveryOffer = {
   };
 };
 
+/** Phase 1: `display_price` is stored `normalized_offers.price` with no markup (DEC-022). */
 export function toCustomerDiscoveryOffer(input: {
   offer_id: string;
   title: string;

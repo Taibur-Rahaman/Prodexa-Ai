@@ -7,6 +7,7 @@ import { loadConfig } from "./config.js";
 import { migrate } from "./db/migrate.js";
 import type { SqlClient } from "./db/sql.js";
 import { createTestDatabase } from "./test/pglite.js";
+import { resolveStoredOfferPrice } from "./discovery/stored-price.js";
 
 const MASTER = "test-api-signing-secret-not-for-production";
 const apps: Array<Awaited<ReturnType<typeof buildApp>>> = [];
@@ -277,6 +278,47 @@ describe("POST /v1/discovery/search", () => {
     expect(JSON.stringify(body)).not.toMatch(/source_url|source_id|secret|private\/product/i);
     expect(JSON.stringify(body)).not.toContain(fixture.otherTenantId);
     expect(JSON.stringify(body)).not.toContain(fixture.siteSecret);
+  });
+
+  it("returns stored PostgreSQL price and ignores client-supplied display_price", async () => {
+    const app = await createLicensedApp();
+    const fixture = await seed();
+    const offerId = "off_00000000-0000-4000-8000-000000000077";
+    await seedOffer(fixture.tenantId, {
+      offer_id: offerId,
+      title: "Stored price gift card",
+      price: 777,
+      currency: "BDT",
+    });
+
+    const request = signedSearch(fixture, {
+      query: "stored price gift",
+      display_price: 1,
+      price: 1,
+      currency: "USD",
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/discovery/search",
+      headers: request.headers,
+      payload: request.body,
+    });
+    const body = response.json() as {
+      results: Array<{ offer_id: string; display_price: number; currency: string }>;
+    };
+
+    expect(response.statusCode).toBe(200);
+    expect(body.results).toHaveLength(1);
+    expect(body.results[0]?.offer_id).toBe(offerId);
+    expect(body.results[0]?.display_price).toBe(777);
+    expect(body.results[0]?.currency).toBe("BDT");
+
+    const resolved = await resolveStoredOfferPrice(db, {
+      tenantId: fixture.tenantId,
+      offerId,
+    });
+    expect(resolved).toEqual({ price: 777, currency: "BDT" });
+    expect(await resolveStoredOfferPrice(db, { tenantId: fixture.otherTenantId, offerId })).toBeNull();
   });
 
   it("returns an empty page when nothing matches", async () => {

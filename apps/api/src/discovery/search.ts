@@ -4,6 +4,7 @@ import {
   type CustomerDiscoveryOffer,
 } from "../domain/offer.js";
 import type { SqlClient } from "../db/sql.js";
+import { parseStoredOfferPrice } from "./stored-price.js";
 
 type OfferRow = {
   offer_id: string;
@@ -25,14 +26,6 @@ export type DiscoverySearchInput = {
 
 function asIso(value: Date | string): string {
   return (value instanceof Date ? value : new Date(value)).toISOString();
-}
-
-function asPrice(value: number | string): number {
-  const parsed = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new Error("invalid_offer_price");
-  }
-  return parsed;
 }
 
 export async function searchNormalizedOffers(
@@ -92,7 +85,7 @@ export async function searchNormalizedOffers(
         offer_id: row.offer_id,
         title: row.title,
         image_url: row.image_url,
-        price: asPrice(row.price),
+        price: parseStoredOfferPrice(row.price),
         currency: row.currency.trim(),
         availability: row.availability,
         retrieved_at: asIso(row.retrieved_at),

@@ -279,6 +279,39 @@ describe("POST /v1/discovery/select", () => {
     expect(JSON.stringify(body)).not.toContain(fixture.siteSecret);
   });
 
+  it("ignores client-supplied price and does not return a price", async () => {
+    const app = await createLicensedApp();
+    const fixture = await seed();
+    const offerId = "off_00000000-0000-4000-8000-000000000077";
+    await seedOffer(fixture.tenantId, { offer_id: offerId });
+
+    const request = signedSelect(fixture, {
+      offer_id: offerId,
+      selection_id: "sel_client_price_ignored_1",
+      price: 1,
+      display_price: 1,
+      currency: "USD",
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/discovery/select",
+      headers: request.headers,
+      payload: request.body,
+    });
+    const body = response.json() as Record<string, unknown>;
+
+    expect(response.statusCode).toBe(200);
+    expect(body).toEqual({
+      selection_id: "sel_client_price_ignored_1",
+      offer_id: offerId,
+      expires_at: body.expires_at,
+    });
+    expect(body).not.toHaveProperty("price");
+    expect(body).not.toHaveProperty("display_price");
+    expect(body).not.toHaveProperty("currency");
+    expect(JSON.stringify(body)).not.toMatch(/"price"|"display_price"/);
+  });
+
   it("does not select another tenant's offer", async () => {
     const app = await createLicensedApp();
     const fixture = await seed();
