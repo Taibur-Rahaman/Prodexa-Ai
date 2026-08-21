@@ -1,6 +1,25 @@
 # Prodexa AI — Changelog
 
-All meaningful product, architecture, business, security, and documentation changes should be recorded here.
+All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
+
+## 2026-08-21 — Autonomous Development & Backend Infrastructure Baseline
+
+### Added
+
+- Project constitution for non-negotiable engineering rules.
+- Canonical backend/infrastructure domain: `prodexaai.cloud`.
+- Hostinger MCP inspection/change-control rules.
+- Deployment and infrastructure documentation.
+- Low-token autonomous Cursor loop and handoff protocol.
+- Explicit infrastructure safety and verification rules.
+
+### Decision
+
+`prodexaai.cloud` is locked as the canonical Prodexa backend/infrastructure domain. Potential service subdomains are created only when required and verified first.
+
+### Implementation Status
+
+Documentation and development-process foundation only. No Hostinger deployment, DNS mutation, production backend, or production data change is claimed by this entry.
 
 ## 2026-08-21 — Documentation Foundation
 

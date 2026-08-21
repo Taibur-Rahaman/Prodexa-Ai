@@ -4,7 +4,19 @@
 
 Keep WordPress lightweight while moving expensive and reusable discovery work into a hosted backend. The architecture must support the owner's pilot today and multi-tenant SaaS tomorrow.
 
-## 2. High-Level Components
+## 2. Canonical Backend Infrastructure
+
+Prodexa's canonical backend/infrastructure domain is:
+
+`prodexaai.cloud`
+
+The domain is reserved for backend services and infrastructure. Service subdomains must be introduced only when required and verified first.
+
+Potential future service boundaries include `api.prodexaai.cloud`, `admin.prodexaai.cloud`, `auth.prodexaai.cloud`, `hooks.prodexaai.cloud`, and `status.prodexaai.cloud`. These names do not imply that the services currently exist.
+
+Hostinger is the current infrastructure provider available through Hostinger MCP. Infrastructure state must be inspected before any DNS, server, deployment, or runtime change.
+
+## 3. High-Level Components
 
 ```text
 Customer Browser
@@ -14,7 +26,7 @@ WordPress / WooCommerce
       |
       | HTTPS + authenticated API
       v
-Prodexa API
+Prodexa API (prodexaai.cloud / verified API subdomain)
       |
       +--> Cache
       |
@@ -35,7 +47,7 @@ Prodexa API
 Source Websites / Official APIs
 ```
 
-## 3. WordPress Responsibilities
+## 4. WordPress Responsibilities
 
 The plugin is responsible for:
 
@@ -51,7 +63,7 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
-## 4. Backend Responsibilities
+## 5. Backend Responsibilities
 
 The backend is responsible for:
 
@@ -70,7 +82,7 @@ The backend is responsible for:
 - Error handling.
 - Audit logs.
 
-## 5. Data Flow
+## 6. Data Flow
 
 ### Search
 
@@ -95,7 +107,7 @@ The backend is responsible for:
 6. Authorized admin reviews source URL and source price.
 7. Merchant manually fulfills the order.
 
-## 6. Multi-Tenancy
+## 7. Multi-Tenancy
 
 Each SaaS customer must have an isolated tenant context.
 
@@ -113,7 +125,7 @@ Tenant-bound data includes:
 
 A tenant must never be able to query another tenant's private data.
 
-## 7. Caching Strategy
+## 8. Caching Strategy
 
 Caching should exist at several safe layers:
 
@@ -126,7 +138,7 @@ Cache entries must include timestamps and freshness information.
 
 Financial values must be revalidated when necessary before final order confirmation.
 
-## 8. Reliability Strategy
+## 9. Reliability Strategy
 
 Each connector should have:
 
@@ -138,7 +150,7 @@ Each connector should have:
 
 A connector failure should normally reduce result coverage rather than crash the whole request.
 
-## 9. Security Boundaries
+## 10. Security Boundaries
 
 ### Public
 
@@ -161,7 +173,7 @@ A connector failure should normally reduce result coverage rather than crash the
 
 Secrets must never cross from backend to browser.
 
-## 10. AI Boundary
+## 11. AI Boundary
 
 AI may be used for:
 
@@ -180,7 +192,7 @@ AI must not be trusted alone for:
 - Source permission checks.
 - Security decisions.
 
-## 11. Technology Selection
+## 12. Technology Selection
 
 Technology choices remain open until implementation planning. The selected stack must support:
 
@@ -194,7 +206,7 @@ Technology choices remain open until implementation planning. The selected stack
 
 Do not lock a framework merely for convenience before validating the workload.
 
-## 12. Scaling Path
+## 13. Scaling Path
 
 ### Pilot
 
@@ -208,6 +220,10 @@ Separate worker processes from API nodes, introduce queues, dedicated cache, and
 
 Multi-tenant orchestration, usage metering, distributed queues, connector workers, observability, and autoscaling.
 
-## 13. Architecture Change Rule
+## 14. Infrastructure Change Rule
 
-Any change that moves responsibility between WordPress, API, connector, storage, or AI layers must be documented in `BUSINESS_DECISIONS.md` and this file before implementation is considered complete.
+Any change involving `prodexaai.cloud`, DNS, deployment targets, servers, or runtime infrastructure must be inspected and verified before it is treated as complete. Destructive production infrastructure changes require explicit human authorization.
+
+## 15. Architecture Change Rule
+
+Any change that moves responsibility between WordPress, API, connector, storage, infrastructure, or AI layers must be documented in `BUSINESS_DECISIONS.md` and this file before implementation is considered complete.

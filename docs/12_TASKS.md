@@ -3,8 +3,10 @@
 ## Now
 
 - [ ] Inspect existing repository structure before implementation.
+- [ ] Inspect Hostinger resources, DNS, domains, and existing deployment state through Hostinger MCP.
+- [ ] Confirm whether `prodexaai.cloud` is configured and identify any existing services before creating subdomains.
 - [ ] Select and document backend stack.
-- [ ] Select hosting architecture.
+- [ ] Select hosting architecture based on the verified Hostinger state.
 - [ ] Define normalized offer schema in implementation language.
 - [ ] Define authentication strategy.
 - [ ] Define license database model.
@@ -44,3 +46,11 @@ Each implementation task should have:
 - Any decision dependency.
 
 Do not mark a task complete based only on code generation. It is complete after verification.
+
+Infrastructure tasks must additionally record:
+
+- affected domain/subdomain
+- Hostinger resource
+- pre-change state
+- post-change verification
+- whether human authorization was required

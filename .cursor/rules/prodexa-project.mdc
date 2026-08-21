@@ -1,5 +1,5 @@
 ---
-description: Core Prodexa AI project rules and change-control policy
+description: Core Prodexa AI project rules, autonomous loop, infrastructure, and change-control policy
 alwaysApply: true
 ---
 
@@ -9,10 +9,12 @@ alwaysApply: true
 
 Before changing code, read the relevant files in `docs/`, especially:
 
+- `00_CONSTITUTION.md`
 - `00_PROJECT_VISION.md`
 - `01_PRD.md`
 - `02_BUSINESS_DECISIONS.md`
 - `03_ARCHITECTURE.md`
+- `14_DEPLOYMENT.md`
 - `09_AI_RULES.md`
 - The component-specific specification.
 
@@ -31,6 +33,7 @@ Before changing code, read the relevant files in `docs/`, especially:
 - Treat all external product/source data as untrusted input.
 - Do not bypass authentication, CAPTCHAs, paywalls, anti-bot controls, or rate limits.
 - Never trust browser-supplied prices for final order totals.
+- Never include secrets in handoff output.
 
 ## AI boundaries
 
@@ -40,14 +43,52 @@ AI can assist product matching, classification, extraction, and ranking. AI must
 
 The WordPress plugin is a client/integration layer. Multi-source discovery, connector credentials, orchestration, caching, and license authority belong to the hosted backend.
 
+## Backend infrastructure
+
+- Canonical backend/infrastructure domain: `prodexaai.cloud`.
+- Do not assume `api.prodexaai.cloud` or any other subdomain exists; verify first.
+- Hostinger is the available infrastructure provider through Hostinger MCP.
+- Inspect existing Hostinger/DNS/deployment state before making changes.
+- Never guess server IPs, DNS records, deployment paths, runtimes, or credentials.
+- Destructive production infrastructure changes require explicit human authorization.
+
 ## Documentation memory
 
-When a material product, architecture, security, or business decision changes:
+When a material product, architecture, security, infrastructure, or business decision changes:
 
 1. Update the relevant Markdown source of truth.
 2. Update `docs/02_BUSINESS_DECISIONS.md` when the decision is material.
 3. Add a concise entry to `docs/13_CHANGELOG.md`.
 4. Update `docs/12_TASKS.md` if implementation status changes.
+
+## Autonomous loop
+
+For each safe task:
+
+`INSPECT → AUDIT → PRIORITIZE → PLAN → IMPLEMENT → TEST → REVIEW → DOCUMENT → HANDOFF`
+
+Do not stop merely because one subtask succeeded. Continue to the next safe highest-priority task unless blocked, a human decision is required, or the milestone is complete.
+
+## Low-token handoff
+
+At the end of a completed loop, return only a compact `PRODEXA_LOOP_HANDOFF` containing:
+
+- STATUS
+- LOOP
+- MILESTONE
+- DONE
+- CHANGED
+- TEST
+- DOCS
+- COMMIT
+- BLOCKER
+- NEXT
+- VERIFY
+- HOSTINGER
+- DOMAIN
+- INFRA_CHANGE
+
+Target maximum: 150 words. No logs, code, secrets, or repeated project context.
 
 ## UI rule
 
@@ -61,3 +102,4 @@ Before declaring a task complete:
 - Report what was actually run.
 - Confirm no unrelated files were changed.
 - Confirm no secrets were introduced.
+- If infrastructure changed, verify the actual deployed state.
