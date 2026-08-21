@@ -10,6 +10,8 @@
 | 4 | 2026-08-21 | COMPLETE | HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers`. No connectors/Hostinger change. |
 | 6 | 2026-08-21 | COMPLETE | WordPress plugin skeleton in `plugins/prodexa-ai/`. T-013 remains BLOCKED. Hostinger unchanged. |
 | 7 | 2026-08-21 | COMPLETE | Storefront `[prodexa_search]` proxies HMAC `POST /v1/discovery/search`. T-013 remains BLOCKED. Hostinger unchanged. |
+| 8 | 2026-08-21 | BLOCKED | `POST /v1/discovery/select` contract was undefined. No implementation. |
+| 9 | 2026-08-21 | COMPLETE | Locked DEC-019 and implemented HMAC `POST /v1/discovery/select` against PostgreSQL. T-013 remains BLOCKED. Hostinger unchanged. |
 
 ## Completed
 
@@ -101,14 +103,20 @@
 - **Tests:** `php plugins/prodexa-ai/tests/run.php` (discovery projection, storefront nonce/HMAC proxy, XSS/secret scans)
 - **Docs:** `05_WORDPRESS_PLUGIN.md`, `03_ARCHITECTURE.md`
 
+### T-016 — Discovery select endpoint
+- **Priority:** P2
+- **Status:** done (local only; not deployed; no connectors; no WooCommerce metadata)
+- **Files:** `apps/api/migrations/003_discovery_selections.sql`, `apps/api/src/discovery/select.ts`, `apps/api/src/routes/discovery.ts`
+- **Tests:** `apps/api/src/discovery.select.test.ts`, `apps/api/src/discovery/select-input.test.ts`
+- **Docs:** `04_API.md`, DEC-019, `03_ARCHITECTURE.md`
+
 ## Now
 
 - [ ] **T-013** Build first permitted connector. P2 — **BLOCKED**: first connector source is not decided. Do not guess a connector.
 
 ## Next
 
-- [ ] `POST /v1/discovery/select` (server-verifiable offer reference; required before checkout metadata).
-- [ ] Add WooCommerce order metadata.
+- [ ] Add WooCommerce order metadata (use `POST /v1/discovery/select` as the server-verifiable reference; do not invent connector data).
 - [ ] Add pricing engine.
 - [ ] Add ranking baseline.
 - [ ] Add source freshness handling.

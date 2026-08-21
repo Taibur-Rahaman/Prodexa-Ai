@@ -2,6 +2,22 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 9: Discovery select endpoint
+
+### Added
+
+- Locked DEC-019: `POST /v1/discovery/select` contract (HMAC site auth, 15-minute PostgreSQL selection, `selection_id` idempotency).
+- Local HMAC `POST /v1/discovery/select` that revalidates tenant-scoped `normalized_offers` and persists `discovery_selections`.
+- Customer-safe response: `selection_id`, `offer_id`, `expires_at`.
+
+### Decision
+
+Locked DEC-019. Phase 1 revalidation is PostgreSQL only; connector-backed live revalidation is deferred because T-013 remains BLOCKED. No WooCommerce order metadata, checkout, pricing, or ranking.
+
+### Implementation Status
+
+Discovery select is tested locally with PGlite (valid, tenant isolation, missing/inactive/expired offer, idempotent repeat, selection conflict, expired selection, invalid input, authentication failure). Connectors, plugin select UI, production deploy, and `api.prodexaai.cloud` are not claimed. Hostinger was not inspected or changed.
+
 ## 2026-08-21 — Loop 7: Storefront discovery search UI
 
 ### Added

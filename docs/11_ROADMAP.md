@@ -23,6 +23,7 @@
 - [x] Implement license validation.
 - [x] Implement cache layer.
 - [x] Implement discovery search endpoint (PostgreSQL lexical index; no connectors yet).
+- [x] Implement discovery select endpoint (PostgreSQL selection reference; no connectors).
 - [ ] Implement connector interface.
 - [ ] Implement first permitted connector.
 - [x] Implement normalized offer schema (TypeScript types + validator).

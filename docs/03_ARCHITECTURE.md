@@ -63,7 +63,7 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
-Pilot implementation (T-014 / T-015): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, and a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search` through WordPress AJAX. HMAC secrets stay in PHP. Checkout, order metadata, offer selection, and WooCommerce hooks are not implemented. Cached license state in WordPress is never treated as authorization.
+Pilot implementation (T-014 / T-015): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, and a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search` through WordPress AJAX. HMAC secrets stay in PHP. Checkout, order metadata, plugin-side offer selection, and WooCommerce hooks are not implemented. Cached license state in WordPress is never treated as authorization.
 
 ## 5. Backend Responsibilities
 
@@ -100,6 +100,16 @@ The backend is responsible for:
 10. WordPress renders customer-safe fields.
 
 Pilot implementation of steps 1–3 and 10: the plugin shortcode collects the query in the browser, WordPress AJAX relays it, and PHP sends a site-HMAC `POST /v1/discovery/search`. The browser never holds the site secret. Pilot implementation of step 5–8: connectors, ranking, and the pricing engine are not implemented. `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `offer_id` order, and `display_price` equal to the stored offer price. An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id.
+
+### Offer selection
+
+1. Client submits `offer_id` plus a client-generated `selection_id`.
+2. API authenticates the site (HMAC) and takes tenant from that site.
+3. API revalidates the offer in PostgreSQL `normalized_offers` (tenant-scoped; no connector call).
+4. API persists a 15-minute selection that later checkout can verify.
+5. Response returns only `selection_id`, `offer_id`, and `expires_at`.
+
+Pilot implementation (T-016 / DEC-019): `POST /v1/discovery/select` follows this flow. The WordPress plugin does not call it yet and does not write WooCommerce order metadata.
 
 ### Order
 
@@ -142,7 +152,7 @@ Cache entries must include timestamps and freshness information.
 
 Financial values must be revalidated when necessary before final order confirmation.
 
-License validation may cache post-auth evaluation extras (activation counts and usage snapshots) in Redis. HMAC, nonce replay, site secrets, and license/site status always come from PostgreSQL. Redis is optional: if `REDIS_URL` is unset or Redis is unavailable, validation continues from PostgreSQL. Cache keys are `prodexa:v1:license:validate:{tenant}:{site}:{license}:{planId}:{planVersion}` with a 60-second TTL, capped by remaining license lifetime. Plan updates change `planVersion` (`plans.updated_at`) and miss the old key. Operators should also delete by site/license prefix after status changes; TTL is the backstop. Discovery search reads tenant-scoped `normalized_offers` from PostgreSQL. Redis query/result caches for search are not implemented; `meta.cached` is always false.
+License validation may cache post-auth evaluation extras (activation counts and usage snapshots) in Redis. HMAC, nonce replay, site secrets, and license/site status always come from PostgreSQL. Redis is optional: if `REDIS_URL` is unset or Redis is unavailable, validation continues from PostgreSQL. Cache keys are `prodexa:v1:license:validate:{tenant}:{site}:{license}:{planId}:{planVersion}` with a 60-second TTL, capped by remaining license lifetime. Plan updates change `planVersion` (`plans.updated_at`) and miss the old key. Operators should also delete by site/license prefix after status changes; TTL is the backstop. Discovery search reads tenant-scoped `normalized_offers` from PostgreSQL. Redis query/result caches for search are not implemented; `meta.cached` is always false. Discovery select persists to PostgreSQL `discovery_selections`; there is no Redis selection cache.
 
 ## 9. Reliability Strategy
 
@@ -204,7 +214,7 @@ Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, 
 
 - **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
 - **Plugin:** PHP 8.2+ on the merchant WordPress/WooCommerce site (client only). Repository path `plugins/prodexa-ai`. No production API hostname is hard-coded.
-- **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites). Tenant-scoped `normalized_offers` is the pilot discovery search corpus.
+- **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites). Tenant-scoped `normalized_offers` is the pilot discovery search corpus. Tenant/site-scoped `discovery_selections` holds 15-minute select references.
 - **Cache:** Redis via `REDIS_URL` (optional). Production uses a real Redis client (`ioredis`). License validation does not depend on Redis; PostgreSQL remains authoritative for HMAC, replay, and license status.
 - **Auth (plugin → API):** per-site HMAC-SHA256 (DEC-018); secrets stay server-side and never in the browser.
 - **Local run:** `HOST=0.0.0.0` and `PORT` from the environment. License persistence needs `DATABASE_URL` (PostgreSQL) and `API_SIGNING_SECRET`. Redis is optional (`REDIS_URL`).

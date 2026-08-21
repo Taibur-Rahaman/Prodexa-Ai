@@ -8,7 +8,7 @@ Canonical backend domain: `prodexaai.cloud`. Do not assume `api.prodexaai.cloud`
 
 ## Status
 
-Pilot / MVP. Documentation foundation is in `docs/`. Local API: liveness, PostgreSQL-backed `POST /v1/license/validate` with optional Redis cache, and HMAC `POST /v1/discovery/search` against a tenant-scoped offer index. WordPress plugin in `plugins/prodexa-ai/` includes settings plus storefront `[prodexa_search]`. Connectors and production deploy are not implemented.
+Pilot / MVP. Documentation foundation is in `docs/`. Local API: liveness, PostgreSQL-backed `POST /v1/license/validate` with optional Redis cache, HMAC `POST /v1/discovery/search` against a tenant-scoped offer index, and HMAC `POST /v1/discovery/select` for 15-minute selection references. WordPress plugin in `plugins/prodexa-ai/` includes settings plus storefront `[prodexa_search]`. Connectors and production deploy are not implemented.
 
 ## Repository layout
 
@@ -33,6 +33,7 @@ License (local; requires `DATABASE_URL` + `API_SIGNING_SECRET` for a real Postgr
 
 - `POST /v1/license/validate`
 - `POST /v1/discovery/search` (searches tenant-scoped `normalized_offers`; empty until seeded or connectors exist)
+- `POST /v1/discovery/select` (15-minute PostgreSQL selection reference; revalidates `normalized_offers` only)
 
 Bind address comes from `HOST` (default `0.0.0.0`) and `PORT` (default `8000`). Copy `.env.example` to `.env` locally. Never commit real credentials.
 

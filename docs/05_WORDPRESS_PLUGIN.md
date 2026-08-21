@@ -77,7 +77,7 @@ Visitor browsers POST to `admin-ajax.php` (`prodexa_ai_search`, `wp_ajax_` and `
 
 Search runs on submit (not live-as-you-type) so identical UI states do not spam the quota. License, tenant, entitlement, and daily search quota remain authoritative on the API. If the API is down or rejects the request, the component shows a customer-safe error; the rest of WordPress continues.
 
-Not in this release: offer selection, WooCommerce checkout/order metadata, product sync, connectors, pricing, ranking, or AI UI.
+Not in this release: calling `POST /v1/discovery/select`, WooCommerce checkout/order metadata, product sync, connectors, pricing, ranking, or AI UI. The API selection reference is the future server-verifiable handle before order creation; the plugin does not write WooCommerce order metadata yet.
 
 Run `php plugins/prodexa-ai/tests/run.php` (no WordPress install required). Do not deploy the plugin onto apex `prodexaai.cloud` without human authorization.
 
@@ -115,7 +115,7 @@ Required disclosures from external sources must be preserved when applicable.
 
 ## WooCommerce Integration
 
-When a customer selects an offer, the plugin must create a server-verifiable reference before checkout.
+When a customer selects an offer, the plugin must create a server-verifiable reference before checkout. That reference is `POST /v1/discovery/select` (DEC-019). The plugin does not call this endpoint yet and must not write WooCommerce order metadata until that integration ships.
 
 The order should contain private metadata such as:
 
