@@ -63,7 +63,7 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
-Pilot implementation (T-014): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, and a display-only `POST /v1/license/validate` refresh. Search UI, checkout, order metadata, and WooCommerce hooks are not implemented. Cached license state in WordPress is never treated as authorization.
+Pilot implementation (T-014 / T-015): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, and a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search` through WordPress AJAX. HMAC secrets stay in PHP. Checkout, order metadata, offer selection, and WooCommerce hooks are not implemented. Cached license state in WordPress is never treated as authorization.
 
 ## 5. Backend Responsibilities
 
@@ -99,7 +99,7 @@ The backend is responsible for:
 9. Response is returned to WordPress.
 10. WordPress renders customer-safe fields.
 
-Pilot implementation of step 5–8: connectors, ranking, and the pricing engine are not implemented. `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `offer_id` order, and `display_price` equal to the stored offer price. An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id.
+Pilot implementation of steps 1–3 and 10: the plugin shortcode collects the query in the browser, WordPress AJAX relays it, and PHP sends a site-HMAC `POST /v1/discovery/search`. The browser never holds the site secret. Pilot implementation of step 5–8: connectors, ranking, and the pricing engine are not implemented. `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `offer_id` order, and `display_price` equal to the stored offer price. An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id.
 
 ### Order
 

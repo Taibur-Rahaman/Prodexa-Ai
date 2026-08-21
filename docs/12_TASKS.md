@@ -9,6 +9,7 @@
 | 3 | 2026-08-21 | COMPLETE | Optional Redis cache for license validation extras (`REDIS_URL`). HMAC/replay/status stay on PostgreSQL. Hostinger unchanged. |
 | 4 | 2026-08-21 | COMPLETE | HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers`. No connectors/Hostinger change. |
 | 6 | 2026-08-21 | COMPLETE | WordPress plugin skeleton in `plugins/prodexa-ai/`. T-013 remains BLOCKED. Hostinger unchanged. |
+| 7 | 2026-08-21 | COMPLETE | Storefront `[prodexa_search]` proxies HMAC `POST /v1/discovery/search`. T-013 remains BLOCKED. Hostinger unchanged. |
 
 ## Completed
 
@@ -93,13 +94,20 @@
 - **Tests:** `php plugins/prodexa-ai/tests/run.php` (HMAC, sanitizer, settings, HTTP client, nonce/capability, bootstrap)
 - **Docs:** `05_WORDPRESS_PLUGIN.md`, `03_ARCHITECTURE.md`
 
+### T-015 — Storefront discovery UI
+- **Priority:** P2
+- **Status:** done (plugin client only; not deployed; apex WordPress on `prodexaai.cloud` untouched)
+- **Files:** `plugins/prodexa-ai/includes/class-discovery.php`, `plugins/prodexa-ai/includes/class-storefront.php`, `plugins/prodexa-ai/assets/`, `plugins/prodexa-ai/templates/storefront-search.php`
+- **Tests:** `php plugins/prodexa-ai/tests/run.php` (discovery projection, storefront nonce/HMAC proxy, XSS/secret scans)
+- **Docs:** `05_WORDPRESS_PLUGIN.md`, `03_ARCHITECTURE.md`
+
 ## Now
 
 - [ ] **T-013** Build first permitted connector. P2 — **BLOCKED**: first connector source is not decided. Do not guess a connector.
 
 ## Next
 
-- [ ] T-014 follow-up: storefront discovery UI (plugin skeleton has no search rendering).
+- [ ] `POST /v1/discovery/select` (server-verifiable offer reference; required before checkout metadata).
 - [ ] Add WooCommerce order metadata.
 - [ ] Add pricing engine.
 - [ ] Add ranking baseline.

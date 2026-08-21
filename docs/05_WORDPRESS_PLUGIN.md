@@ -42,15 +42,21 @@ plugins/prodexa-ai/
 │   ├── class-api-client.php
 │   ├── class-hmac.php
 │   ├── class-license.php
+│   ├── class-discovery.php
+│   ├── class-storefront.php
 │   ├── class-sanitizer.php
 │   ├── class-secrets.php
 │   └── class-http-result.php
+├── assets/
+│   ├── css/search.css
+│   └── js/search.js
 ├── templates/
-│   └── admin-settings.php
+│   ├── admin-settings.php
+│   └── storefront-search.php
 └── tests/
 ```
 
-Search, checkout, and order-metadata classes are not in the skeleton. Responsibility boundaries above still apply when those features are added.
+Checkout and order-metadata classes are not implemented. Responsibility boundaries above still apply when those features are added.
 
 ## Skeleton (T-014)
 
@@ -58,12 +64,20 @@ Shipped in `plugins/prodexa-ai/`:
 
 - Bootstrap with PHP 8.2+ activation check; deactivation keeps options; uninstall deletes settings and sealed secrets.
 - Settings API page (capability `manage_options`): API base URL, timeout, site ID, site secret, license key.
-- Site secret and license key are encrypted at rest with a key derived from WordPress salts. Password fields are never prefilled. Nothing is localized into JavaScript.
+- Site secret and license key are encrypted at rest with a key derived from WordPress salts. Password fields are never prefilled. Secrets are never localized into JavaScript.
 - HTTP client with timeouts, no redirects, HMAC-SHA256 for protected routes (DEC-018). `GET /v1/health` is unsigned. `POST /v1/license/validate` is signed when credentials exist.
 - Cached license snapshot is operator display only. `Prodexa_AI_License::cached_state_authorizes_access()` is always false. The API remains authoritative.
 - `POST /v1/license/activate` and `POST /v1/license/deactivate` are not called; stored license keys wait for those endpoints.
 
-Not in this skeleton: storefront search, WooCommerce checkout/order metadata, product sync, connectors, pricing, ranking, or AI UI.
+## Storefront search (T-015)
+
+Merchants place `[prodexa_search]` on a page (optional `limit`, 1–20, default 10). The shortcode renders a search input, loading/empty/error regions, customer-safe result cards, and next/previous pagination. `meta.count` is the current page size, not a total, so “next” is shown when that page is full.
+
+Visitor browsers POST to `admin-ajax.php` (`prodexa_ai_search`, `wp_ajax_` and `wp_ajax_nopriv_`) with a CSRF nonce only. PHP signs `POST /v1/discovery/search` with the existing site HMAC client. Site secrets, license keys, and HMAC headers are never localized into JavaScript. The plugin projects only the customer-safe offer fields the API already returns: `offer_id`, `title`, `image_url`, `display_price`, `currency`, `availability`, `freshness.retrieved_at`. Private fields (`source_url`, `source_id`, `tenant_id`) are dropped even if present. If WooCommerce is active, `context.currency` is taken from the store currency; browsers cannot supply currency, country, or `tenant_id`.
+
+Search runs on submit (not live-as-you-type) so identical UI states do not spam the quota. License, tenant, entitlement, and daily search quota remain authoritative on the API. If the API is down or rejects the request, the component shows a customer-safe error; the rest of WordPress continues.
+
+Not in this release: offer selection, WooCommerce checkout/order metadata, product sync, connectors, pricing, ranking, or AI UI.
 
 Run `php plugins/prodexa-ai/tests/run.php` (no WordPress install required). Do not deploy the plugin onto apex `prodexaai.cloud` without human authorization.
 
@@ -89,11 +103,11 @@ On normal use:
 
 The plugin should integrate with the merchant's existing search UX where possible instead of forcing a completely separate storefront.
 
-Search requests should be debounced on the client where appropriate, but server-side rate limiting remains mandatory.
+Pilot UI is the `[prodexa_search]` shortcode (T-015). Search requests run on submit. Server-side rate limiting remains mandatory.
 
 ## Result Rendering
 
-Only customer-safe fields should be rendered to visitors.
+Only customer-safe fields should be rendered to visitors. The storefront UI renders the existing discovery contract fields only.
 
 Private fields must remain server/admin-only.
 

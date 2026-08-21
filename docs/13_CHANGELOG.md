@@ -2,6 +2,22 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 7: Storefront discovery search UI
+
+### Added
+
+- WordPress storefront `[prodexa_search]` shortcode with search input, loading/empty/error states, and page-sized pagination.
+- PHP AJAX proxy (`prodexa_ai_search`, including logged-out visitors) that signs existing `POST /v1/discovery/search` with site HMAC. Secrets stay server-side.
+- Customer-safe offer projection only (`offer_id`, `title`, `image_url`, `display_price`, `currency`, `availability`, `freshness.retrieved_at`).
+
+### Decision
+
+No new locked business decision. DEC-002/DEC-003 (plugin is a client), DEC-008 (server-side license authority), and DEC-018 (HMAC) are unchanged. The discovery API contract was not modified. T-013 remains BLOCKED; no connector was selected.
+
+### Implementation Status
+
+Storefront search UI only. Offer selection, WooCommerce checkout/order metadata, product sync, connectors, ranking, pricing engine, billing, AI/RAG, production deploy, and `api.prodexaai.cloud` are not claimed. Hostinger was not inspected or changed. Apex `prodexaai.cloud` WordPress was not modified.
+
 ## 2026-08-21 — Loop 6: WordPress plugin skeleton
 
 ### Added

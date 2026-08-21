@@ -29,7 +29,7 @@
 - [ ] Implement deterministic pricing.
 - [ ] Implement ranking baseline.
 - [x] Implement WordPress plugin skeleton.
-- [ ] Integrate storefront discovery UI.
+- [x] Integrate storefront discovery UI.
 - [ ] Integrate WooCommerce order metadata.
 - [ ] Add end-to-end tests.
 - [ ] Run pilot on owner's store.
