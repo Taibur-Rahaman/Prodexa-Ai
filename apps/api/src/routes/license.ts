@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { LicenseValidationCache } from "../cache/license-validation.js";
 import { AUTH_UNAUTHENTICATED, validateLicensedSite } from "../license/validate.js";
 import { normalizeDomain } from "../domain/site-domain.js";
 import type { SqlClient } from "../db/sql.js";
@@ -37,6 +38,7 @@ export function registerLicenseRoutes(
     apiSigningSecret: string | null;
     timestampSkewSeconds: number;
     rateLimitPerMinute: number;
+    cache: LicenseValidationCache;
   },
 ): void {
   app.post("/v1/license/validate", async (request, reply) => {
@@ -88,6 +90,7 @@ export function registerLicenseRoutes(
       {
         timestampSkewSeconds: deps.timestampSkewSeconds,
         rateLimitPerMinute: deps.rateLimitPerMinute,
+        cache: deps.cache,
       },
     );
 

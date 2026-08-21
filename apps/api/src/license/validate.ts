@@ -1,5 +1,6 @@
 import { decryptSecret } from "../auth/secret-box.js";
 import { signSiteRequest, signaturesMatch, timestampIsFresh } from "../auth/site-hmac.js";
+import type { LicenseValidationCache } from "../cache/license-validation.js";
 import type { SqlClient } from "../db/sql.js";
 import { isUniqueViolation } from "../db/sql.js";
 import {
@@ -26,6 +27,7 @@ type SiteLicenseRow = {
   plan_id: string;
   plan_code: string;
   plan_name: string;
+  plan_updated_at: Date | string;
   features: unknown;
   usage_limits: unknown;
 };
@@ -75,11 +77,17 @@ export type ValidateLicenseInput = {
   now?: Date;
 };
 
+export type ValidateLicenseOptions = {
+  timestampSkewSeconds: number;
+  rateLimitPerMinute: number;
+  cache?: LicenseValidationCache | null;
+};
+
 export async function validateLicensedSite(
   db: SqlClient,
   masterSecret: string,
   input: ValidateLicenseInput,
-  options: { timestampSkewSeconds: number; rateLimitPerMinute: number },
+  options: ValidateLicenseOptions,
 ): Promise<LicenseDecision> {
   const now = input.now ?? new Date();
   const nowSeconds = Math.floor(now.getTime() / 1000);
@@ -96,7 +104,7 @@ export async function validateLicensedSite(
     throw AUTH_UNAUTHENTICATED;
   }
 
-  return db.transact(async (tx) => {
+  const loaded = await db.transact(async (tx) => {
     const loaded = await tx.query<SiteLicenseRow>(
       `
       SELECT
@@ -113,6 +121,7 @@ export async function validateLicensedSite(
         p.id AS plan_id,
         p.code AS plan_code,
         p.name AS plan_name,
+        p.updated_at AS plan_updated_at,
         p.features,
         p.usage_limits
       FROM site_activations s
@@ -189,29 +198,52 @@ export async function validateLicensedSite(
       );
     }
 
-    const activationCount = await tx.query<CountRow>(
-      `
-      SELECT COUNT(*)::int AS n
-      FROM site_activations
-      WHERE license_id = $1
-        AND tenant_id = $2
-        AND status = 'active'
-      `,
-      [row.license_id, row.tenant_id],
-    );
+    const cacheIdentity = {
+      tenantId: row.tenant_id,
+      siteId: row.site_id,
+      licenseId: row.license_id,
+      planId: row.plan_id,
+      planVersion: String(asDate(row.plan_updated_at).getTime()),
+    };
+    const usageDay = utcDay(now);
+    const cache = options.cache ?? null;
+    let extras = cache ? await cache.get(cacheIdentity, usageDay) : null;
+    const cacheHit = extras !== null;
 
-    const usage = await tx.query<UsageRow>(
-      `
-      SELECT search_requests, connector_calls
-      FROM usage_counters
-      WHERE license_id = $1
-        AND tenant_id = $2
-        AND period_start = $3
-      `,
-      [row.license_id, row.tenant_id, utcDay(now)],
-    );
-    const usageRow = usage.rows[0];
+    if (!extras) {
+      const activationCount = await tx.query<CountRow>(
+        `
+        SELECT COUNT(*)::int AS n
+        FROM site_activations
+        WHERE license_id = $1
+          AND tenant_id = $2
+          AND status = 'active'
+        `,
+        [row.license_id, row.tenant_id],
+      );
 
+      const usage = await tx.query<UsageRow>(
+        `
+        SELECT search_requests, connector_calls
+        FROM usage_counters
+        WHERE license_id = $1
+          AND tenant_id = $2
+          AND period_start = $3
+        `,
+        [row.license_id, row.tenant_id, usageDay],
+      );
+      const usageRow = usage.rows[0];
+      extras = {
+        activationUsed: asInt(activationCount.rows[0]?.n ?? 0),
+        usage: {
+          period_start: usageDay,
+          search_requests: asInt(usageRow?.search_requests ?? 0),
+          connector_calls: asInt(usageRow?.connector_calls ?? 0),
+        },
+      };
+    }
+
+    const expiresAt = row.expires_at === null ? null : asDate(row.expires_at);
     const decision = evaluateLicense(
       {
         tenantId: row.tenant_id,
@@ -222,9 +254,9 @@ export async function validateLicensedSite(
         requestDomain: input.domain,
         licenseStatus: asStatus(row.license_status),
         startsAt: asDate(row.starts_at),
-        expiresAt: row.expires_at === null ? null : asDate(row.expires_at),
+        expiresAt,
         activationLimit: asInt(row.activation_limit),
-        activationUsed: asInt(activationCount.rows[0]?.n ?? 0),
+        activationUsed: extras.activationUsed,
         plan: {
           id: row.plan_id,
           code: row.plan_code,
@@ -232,17 +264,13 @@ export async function validateLicensedSite(
         },
         features: parseFeatureMap(row.features),
         usageLimits: parseUsageLimits(row.usage_limits),
-        usage: {
-          period_start: utcDay(now),
-          search_requests: asInt(usageRow?.search_requests ?? 0),
-          connector_calls: asInt(usageRow?.connector_calls ?? 0),
-        },
+        usage: extras.usage,
         requestedFeature: input.requestedFeature,
       },
       now,
     );
 
-    if (decision.ok) {
+    if (decision.ok && !cacheHit) {
       await tx.query(
         `
         UPDATE site_activations
@@ -254,6 +282,12 @@ export async function validateLicensedSite(
       );
     }
 
-    return decision;
+    return { decision, cacheIdentity, extras, cacheHit, expiresAt };
   });
+
+  if (!loaded.cacheHit && options.cache) {
+    await options.cache.set(loaded.cacheIdentity, loaded.extras, loaded.expiresAt, now);
+  }
+
+  return loaded.decision;
 }

@@ -18,6 +18,7 @@
   "dependencies": {
     "@fastify/helmet": "^13.1.1",
     "fastify": "^5.12.1",
+    "ioredis": "^6.0.0",
     "pg": "^8.23.0"
   },
   "devDependencies": {

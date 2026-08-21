@@ -4,6 +4,7 @@ export type AppConfig = {
   port: number;
   logLevel: "fatal" | "error" | "warn" | "info" | "debug" | "trace";
   databaseUrl: string | null;
+  redisUrl: string | null;
   apiSigningSecret: string | null;
   authTimestampSkewSeconds: number;
   validateRateLimitPerMinute: number;
@@ -56,6 +57,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         ? env.LOG_LEVEL
         : "info",
     databaseUrl: readOptional("DATABASE_URL", env),
+    redisUrl: readOptional("REDIS_URL", env),
     apiSigningSecret: readOptional("API_SIGNING_SECRET", env),
     authTimestampSkewSeconds: readPositiveInt("AUTH_TIMESTAMP_SKEW_SECONDS", env, 300),
     validateRateLimitPerMinute: readPositiveInt("VALIDATE_RATE_LIMIT_PER_MINUTE", env, 60),

@@ -13,9 +13,18 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ PORT: "0" })).toThrow(/PORT/);
   });
 
-  it("leaves DATABASE_URL and API_SIGNING_SECRET unset until provided", () => {
+  it("leaves DATABASE_URL, REDIS_URL, and API_SIGNING_SECRET unset until provided", () => {
     const config = loadConfig({ NODE_ENV: "test" });
     expect(config.databaseUrl).toBeNull();
+    expect(config.redisUrl).toBeNull();
     expect(config.apiSigningSecret).toBeNull();
+  });
+
+  it("reads REDIS_URL when provided", () => {
+    const config = loadConfig({
+      NODE_ENV: "test",
+      REDIS_URL: "redis://127.0.0.1:6379",
+    });
+    expect(config.redisUrl).toBe("redis://127.0.0.1:6379");
   });
 });
