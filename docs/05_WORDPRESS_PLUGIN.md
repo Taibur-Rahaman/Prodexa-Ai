@@ -43,7 +43,9 @@ plugins/prodexa-ai/
 │   ├── class-hmac.php
 │   ├── class-license.php
 │   ├── class-discovery.php
+│   ├── class-selection.php
 │   ├── class-storefront.php
+│   ├── class-woocommerce.php
 │   ├── class-sanitizer.php
 │   ├── class-secrets.php
 │   └── class-http-result.php
@@ -56,7 +58,7 @@ plugins/prodexa-ai/
 └── tests/
 ```
 
-Checkout and order-metadata classes are not implemented. Responsibility boundaries above still apply when those features are added.
+Checkout payment, product sync, and pricing are not implemented. Order metadata is the validated selection reference only (DEC-020).
 
 ## Skeleton (T-014)
 
@@ -65,7 +67,7 @@ Shipped in `plugins/prodexa-ai/`:
 - Bootstrap with PHP 8.2+ activation check; deactivation keeps options; uninstall deletes settings and sealed secrets.
 - Settings API page (capability `manage_options`): API base URL, timeout, site ID, site secret, license key.
 - Site secret and license key are encrypted at rest with a key derived from WordPress salts. Password fields are never prefilled. Secrets are never localized into JavaScript.
-- HTTP client with timeouts, no redirects, HMAC-SHA256 for protected routes (DEC-018). `GET /v1/health` is unsigned. `POST /v1/license/validate` is signed when credentials exist.
+- HTTP client with timeouts, no redirects, HMAC-SHA256 for protected routes (DEC-018). `GET /v1/health` is unsigned. `POST /v1/license/validate`, `POST /v1/discovery/search`, and `POST /v1/discovery/select` are signed when credentials exist.
 - Cached license snapshot is operator display only. `Prodexa_AI_License::cached_state_authorizes_access()` is always false. The API remains authoritative.
 - `POST /v1/license/activate` and `POST /v1/license/deactivate` are not called; stored license keys wait for those endpoints.
 
@@ -77,7 +79,24 @@ Visitor browsers POST to `admin-ajax.php` (`prodexa_ai_search`, `wp_ajax_` and `
 
 Search runs on submit (not live-as-you-type) so identical UI states do not spam the quota. License, tenant, entitlement, and daily search quota remain authoritative on the API. If the API is down or rejects the request, the component shows a customer-safe error; the rest of WordPress continues.
 
-Not in this release: calling `POST /v1/discovery/select`, WooCommerce checkout/order metadata, product sync, connectors, pricing, ranking, or AI UI. The API selection reference is the future server-verifiable handle before order creation; the plugin does not write WooCommerce order metadata yet.
+Not in this release: product sync, connectors, pricing, ranking, payment, or AI UI.
+
+## Offer selection and WooCommerce metadata (T-017 / DEC-020)
+
+Result cards include a Select control. Visitor browsers POST only `offer_id` plus the existing storefront CSRF nonce to `admin-ajax.php` (`prodexa_ai_select`, `wp_ajax_` and `wp_ajax_nopriv_`). PHP mints `selection_id` and signs `POST /v1/discovery/select`. Browsers cannot supply `selection_id`, price, currency, country, or `tenant_id` as trusted input. HMAC secrets stay in PHP.
+
+On a successful select, the plugin stores the API-returned `selection_id`, `offer_id`, and `expires_at` in the WooCommerce session as an untrusted pending handle. `offer_id` is kept only so checkout can replay the existing select contract; it is not written to the order.
+
+Before WooCommerce persists Prodexa order metadata, the plugin revalidates by replaying HMAC `POST /v1/discovery/select` with the pending `selection_id` and `offer_id` (DEC-019 idempotent repeat). There is no GET selection endpoint. Hooks: `woocommerce_checkout_create_order` (classic, before `$order->save()`) and `woocommerce_store_api_checkout_update_order_from_request` (Store API). On HTTP 200, the order receives only:
+
+- `_prodexa_selection_id`
+- `_prodexa_selection_expires_at`
+
+copied from the API response. These keys are protected meta. They are not authoritative for price, product identity beyond the selection reference, license, tenant, or payment.
+
+Checkout POST fields matching `prodexa_` / `_prodexa_` are stripped. Client-supplied extra session keys (price, tenant, source URL) are dropped. Invalid, expired (`410`), unknown/other-tenant offer (`404`), or conflict (`409`) selections fail checkout deterministically with a customer-safe error and do not persist Prodexa metadata. Orders with no pending selection are unchanged. If the API is down during a pending selection, checkout of that selection fails; other store functionality continues.
+
+Not implemented: payment, WooCommerce price/totals changes, product sync, connectors, ranking, or AI UI.
 
 Run `php plugins/prodexa-ai/tests/run.php` (no WordPress install required). Do not deploy the plugin onto apex `prodexaai.cloud` without human authorization.
 
@@ -115,20 +134,14 @@ Required disclosures from external sources must be preserved when applicable.
 
 ## WooCommerce Integration
 
-When a customer selects an offer, the plugin must create a server-verifiable reference before checkout. That reference is `POST /v1/discovery/select` (DEC-019). The plugin does not call this endpoint yet and must not write WooCommerce order metadata until that integration ships.
+When a customer selects an offer, the plugin creates a server-verifiable reference before checkout via HMAC `POST /v1/discovery/select` (DEC-019). Checkout revalidates that reference before writing order meta (DEC-020).
 
-The order should contain private metadata such as:
+Pilot order metadata is only:
 
-- Prodexa request ID.
-- Offer ID.
-- Source URL.
-- External product ID.
-- Source price snapshot.
-- Merchant sale price.
-- Pricing rule/version.
-- Retrieval timestamp.
+- `_prodexa_selection_id`
+- `_prodexa_selection_expires_at`
 
-Sensitive secrets must never be stored in plain WooCommerce order metadata.
+A longer fulfillment trace (request ID, source URL, source/merchant prices, pricing rule, retrieval timestamp) is not stored in this release. Order meta is not authoritative for those values. Sensitive secrets must never be stored in plain WooCommerce order metadata.
 
 ## Failure Behavior
 
@@ -150,7 +163,7 @@ If Prodexa API is unavailable:
 
 The plugin should target supported WordPress and WooCommerce versions defined at release time. Compatibility claims must be tested rather than assumed.
 
-PHP 8.2+ is the expected plugin runtime on merchant sites. Requires WordPress 6.4+. WooCommerce integration is specified above but is not implemented in the T-014 skeleton. The WordPress tree currently present on apex `prodexaai.cloud` is not the Prodexa plugin and must not be overwritten without human authorization.
+PHP 8.2+ is the expected plugin runtime on merchant sites. Requires WordPress 6.4+. WooCommerce order-metadata hooks are implemented (DEC-020); payment, pricing, and product sync are not. The WordPress tree currently present on apex `prodexaai.cloud` is not the Prodexa plugin and must not be overwritten without human authorization.
 
 ## Security
 

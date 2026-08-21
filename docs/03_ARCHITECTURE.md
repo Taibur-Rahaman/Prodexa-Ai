@@ -63,7 +63,7 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
-Pilot implementation (T-014 / T-015): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, and a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search` through WordPress AJAX. HMAC secrets stay in PHP. Checkout, order metadata, plugin-side offer selection, and WooCommerce hooks are not implemented. Cached license state in WordPress is never treated as authorization.
+Pilot implementation (T-014 / T-015 / T-017): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search`, offer select via HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for the validated selection reference. HMAC secrets stay in PHP. Payment, product sync, pricing, ranking, and connectors are not implemented. Cached license state in WordPress is never treated as authorization. Order meta is never treated as authorization for price, license, tenant, or payment.
 
 ## 5. Backend Responsibilities
 
@@ -109,17 +109,20 @@ Pilot implementation of steps 1–3 and 10: the plugin shortcode collects the qu
 4. API persists a 15-minute selection that later checkout can verify.
 5. Response returns only `selection_id`, `offer_id`, and `expires_at`.
 
-Pilot implementation (T-016 / DEC-019): `POST /v1/discovery/select` follows this flow. The WordPress plugin does not call it yet and does not write WooCommerce order metadata.
+Pilot implementation (T-016 / DEC-019): `POST /v1/discovery/select` follows this flow.
 
 ### Order
 
 1. Customer selects an offer.
-2. WordPress creates the normal WooCommerce order.
-3. Plugin sends/records a server-verifiable discovery reference.
-4. Private source metadata is stored with the order.
-5. Customer pays through the merchant checkout.
-6. Authorized admin reviews source URL and source price.
-7. Merchant manually fulfills the order.
+2. Plugin creates a server-verifiable selection (`POST /v1/discovery/select`) and holds it in the WooCommerce session as untrusted pending state.
+3. WordPress creates the normal WooCommerce order.
+4. Before Prodexa metadata is persisted, the plugin revalidates by replaying `POST /v1/discovery/select` (tenant from HMAC site identity).
+5. Private order metadata stores only `_prodexa_selection_id` and `_prodexa_selection_expires_at` from the API response (DEC-020).
+6. Customer pays through the merchant checkout (not implemented in the plugin).
+7. Authorized admin can later use the selection reference; source URL and source price remain backend-authoritative.
+8. Merchant manually fulfills the order.
+
+Pilot implementation of steps 1–5 (T-017): invalid/expired/other-tenant selections fail checkout and do not write Prodexa meta. Payment, pricing, and line-item creation for discovered offers are not implemented.
 
 ## 7. Multi-Tenancy
 
@@ -213,7 +216,7 @@ AI must not be trusted alone for:
 Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, DEC-017, DEC-018):
 
 - **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
-- **Plugin:** PHP 8.2+ on the merchant WordPress/WooCommerce site (client only). Repository path `plugins/prodexa-ai`. No production API hostname is hard-coded.
+- **Plugin:** PHP 8.2+ on the merchant WordPress/WooCommerce site (client only). Repository path `plugins/prodexa-ai`. No production API hostname is hard-coded. Storefront search/select proxy HMAC to the API. WooCommerce order meta is the selection reference only (DEC-020).
 - **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites). Tenant-scoped `normalized_offers` is the pilot discovery search corpus. Tenant/site-scoped `discovery_selections` holds 15-minute select references.
 - **Cache:** Redis via `REDIS_URL` (optional). Production uses a real Redis client (`ioredis`). License validation does not depend on Redis; PostgreSQL remains authoritative for HMAC, replay, and license status.
 - **Auth (plugin → API):** per-site HMAC-SHA256 (DEC-018); secrets stay server-side and never in the browser.

@@ -10,7 +10,7 @@ Prodexa AI is being built as a product-discovery engine with a WordPress/WooComm
 
 ## Current Stage
 
-Pilot / MVP. Last completed autonomous loop: **9**. Milestone: Phase 1 — Pilot MVP (in progress).
+Pilot / MVP. Last completed autonomous loop: **10**. Milestone: Phase 1 — Pilot MVP (in progress).
 
 ## Locked Architecture
 
@@ -28,8 +28,8 @@ Pilot / MVP. Last completed autonomous loop: **9**. Milestone: Phase 1 — Pilot
 - Canonical domain `prodexaai.cloud`; `api.prodexaai.cloud` does not exist.
 - License validation is local-only: PostgreSQL model + `POST /v1/license/validate` with optional Redis cache (T-011). Activate/deactivate are not implemented.
 - Discovery search is local-only: HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers` (T-012). No connectors, ranking, pricing engine, or Redis search cache.
-- Discovery select is local-only: HMAC `POST /v1/discovery/select` against PostgreSQL `normalized_offers` + `discovery_selections` (T-016 / DEC-019). 15-minute TTL. No connector revalidation, checkout, pricing, ranking, or WooCommerce metadata.
-- WordPress plugin is in `plugins/prodexa-ai/` (T-014 / T-015): settings, sealed site credentials, HMAC client, health check, display-only license refresh, and storefront `[prodexa_search]` that proxies `POST /v1/discovery/search`. WooCommerce checkout, plugin-side offer selection, and connectors are not implemented.
+- Discovery select is local-only: HMAC `POST /v1/discovery/select` against PostgreSQL `normalized_offers` + `discovery_selections` (T-016 / DEC-019). 15-minute TTL. No connector revalidation, pricing, or ranking.
+- WordPress plugin is in `plugins/prodexa-ai/` (T-014 / T-015 / T-017): settings, sealed site credentials, HMAC client, health check, display-only license refresh, storefront `[prodexa_search]`, HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for `_prodexa_selection_id` + `_prodexa_selection_expires_at` (DEC-020). Order meta is not authoritative for price, license, tenant, or payment. Payment, product sync, and connectors are not implemented.
 - **T-013 remains BLOCKED:** first connector source is not decided. Do not guess a connector.
 
 ## Locked Product Principles

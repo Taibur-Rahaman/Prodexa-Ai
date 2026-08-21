@@ -31,7 +31,7 @@
 - [ ] Implement ranking baseline.
 - [x] Implement WordPress plugin skeleton.
 - [x] Integrate storefront discovery UI.
-- [ ] Integrate WooCommerce order metadata.
+- [x] Integrate WooCommerce order metadata.
 - [ ] Add end-to-end tests.
 - [ ] Run pilot on owner's store.
 

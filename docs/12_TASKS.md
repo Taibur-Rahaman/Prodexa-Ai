@@ -11,7 +11,7 @@
 | 6 | 2026-08-21 | COMPLETE | WordPress plugin skeleton in `plugins/prodexa-ai/`. T-013 remains BLOCKED. Hostinger unchanged. |
 | 7 | 2026-08-21 | COMPLETE | Storefront `[prodexa_search]` proxies HMAC `POST /v1/discovery/search`. T-013 remains BLOCKED. Hostinger unchanged. |
 | 8 | 2026-08-21 | BLOCKED | `POST /v1/discovery/select` contract was undefined. No implementation. |
-| 9 | 2026-08-21 | COMPLETE | Locked DEC-019 and implemented HMAC `POST /v1/discovery/select` against PostgreSQL. T-013 remains BLOCKED. Hostinger unchanged. |
+| 10 | 2026-08-21 | COMPLETE | WooCommerce order metadata stores HMAC-validated `selection_id` (DEC-020). T-013 remains BLOCKED. Hostinger unchanged. |
 
 ## Completed
 
@@ -110,13 +110,19 @@
 - **Tests:** `apps/api/src/discovery.select.test.ts`, `apps/api/src/discovery/select-input.test.ts`
 - **Docs:** `04_API.md`, DEC-019, `03_ARCHITECTURE.md`
 
+### T-017 — WooCommerce order metadata
+- **Priority:** P2
+- **Status:** done (plugin client only; not deployed; apex WordPress on `prodexaai.cloud` untouched)
+- **Files:** `plugins/prodexa-ai/includes/class-selection.php`, `plugins/prodexa-ai/includes/class-woocommerce.php`, `plugins/prodexa-ai/includes/class-storefront.php`, `plugins/prodexa-ai/includes/class-api-client.php`
+- **Tests:** `php plugins/prodexa-ai/tests/run.php` (valid/expired/invalid/tenant-mismatch attach, select HMAC proxy, untrusted client meta stripped)
+- **Docs:** `05_WORDPRESS_PLUGIN.md`, DEC-020, `03_ARCHITECTURE.md`, `08_SECURITY.md`
+
 ## Now
 
 - [ ] **T-013** Build first permitted connector. P2 — **BLOCKED**: first connector source is not decided. Do not guess a connector.
 
 ## Next
 
-- [ ] Add WooCommerce order metadata (use `POST /v1/discovery/select` as the server-verifiable reference; do not invent connector data).
 - [ ] Add pricing engine.
 - [ ] Add ranking baseline.
 - [ ] Add source freshness handling.

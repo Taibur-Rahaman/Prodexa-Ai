@@ -129,7 +129,7 @@ Protected site-HMAC endpoint (DEC-018 / DEC-019). Tenant is derived from the aut
 
 Headers: same as `POST /v1/license/validate` (`x-prodexa-site-id`, `x-prodexa-timestamp`, `x-prodexa-nonce`, `x-prodexa-signature`, optional `x-request-id`).
 
-This endpoint does not recalculate price, rank results, start checkout, take payment, write WooCommerce order metadata, or call external connectors.
+This endpoint does not recalculate price, rank results, start checkout, take payment, or call external connectors. It does not write WooCommerce order metadata; the WordPress plugin does that after a successful replay (DEC-020).
 
 ### Request
 
@@ -160,7 +160,7 @@ Customer-safe fields only. Success bodies do not include `tenant_id`, `site_id`,
 }
 ```
 
-`expires_at` is ISO-8601. Repeat of the same valid request returns the existing active selection. Reusing `selection_id` for a different offer returns `409`. Replaying an expired `selection_id` returns `410`; the client must mint a new key. The selection reference is the future server-verifiable handle before WooCommerce order creation; this loop does not write order metadata.
+`expires_at` is ISO-8601. Repeat of the same valid request returns the existing active selection. Reusing `selection_id` for a different offer returns `409`. Replaying an expired `selection_id` returns `410`; the client must mint a new key. The WordPress plugin uses this idempotent repeat as the checkout verify path. There is no GET selection endpoint.
 
 Deterministic errors (standard error format):
 

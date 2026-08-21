@@ -182,7 +182,19 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Live connector revalidation in this loop (rejected — T-013 blocked); accepting client-supplied tenant/offer ownership (rejected); writing WooCommerce order metadata in the same loop (rejected — separate task).
 
-**Consequences:** Plugin storefront search still does not call select. Checkout integration must use this selection reference later. Connector-backed revalidation needs a new decision after T-013 is unblocked.
+**Consequences:** The WordPress plugin uses this selection reference at checkout (DEC-020). Connector-backed revalidation needs a new decision after T-013 is unblocked. This endpoint still does not write WooCommerce order metadata.
+
+## DEC-020 — WooCommerce Order Metadata Is a Selection Reference
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** WooCommerce order metadata stores only the HMAC-validated discovery selection reference: `_prodexa_selection_id` and `_prodexa_selection_expires_at`, copied from `POST /v1/discovery/select`. PHP mints `selection_id`. Checkout revalidates by replaying that existing endpoint with the pending `selection_id` and `offer_id`. There is no GET selection API. Order meta is not authoritative for price, product identity beyond the selection reference, license, tenant, or payment. Client-supplied checkout fields, cart fields, and extra session keys are untrusted. `offer_id` may be held in the WooCommerce session only as untrusted input to the replay.
+
+**Why:** Loop 10 must attach a server-verifiable reference without inventing a new API contract and without treating WordPress as the source of financial or tenant truth.
+
+**Alternatives considered:** GET `/v1/discovery/selection` (rejected — not in DEC-019); storing source URL, prices, or offer identity on the order (rejected — backend remains authoritative; `selection_id` is the handle).
+
+**Consequences:** Payment, WooCommerce totals, product sync, and connectors remain unimplemented. T-013 stays BLOCKED. Connector-backed live revalidation still needs a later decision.
 
 ## Change Protocol
 

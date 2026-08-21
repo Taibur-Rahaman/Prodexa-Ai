@@ -2,6 +2,22 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 10: WooCommerce selection metadata
+
+### Added
+
+- Locked DEC-020: WooCommerce order meta is only `_prodexa_selection_id` and `_prodexa_selection_expires_at` from HMAC `POST /v1/discovery/select`.
+- Storefront Select control proxies `POST /v1/discovery/select`. PHP mints `selection_id`. Secrets stay server-side.
+- Checkout revalidates by replaying the existing select contract before persisting order meta (classic `woocommerce_checkout_create_order` and Store API `woocommerce_store_api_checkout_update_order_from_request`).
+
+### Decision
+
+Locked DEC-020. No new select API fields or GET selection endpoint. Order metadata is not authoritative for price, license, tenant, or payment. T-013 remains BLOCKED.
+
+### Implementation Status
+
+Plugin tests cover valid, expired, invalid, and tenant-mismatch attach paths plus stripping of client-supplied Prodexa fields. Local `npm test` uses a 60s Vitest timeout so PGlite-backed suites do not flake under load. Payment, product sync, connectors, pricing, ranking, production deploy, and `api.prodexaai.cloud` are not claimed. Hostinger was not inspected or changed. Apex `prodexaai.cloud` WordPress was not modified.
+
 ## 2026-08-21 — Loop 9: Discovery select endpoint
 
 ### Added
