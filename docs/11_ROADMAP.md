@@ -16,15 +16,15 @@
 
 ## Phase 1 — Pilot MVP
 
-- [ ] Select backend stack.
-- [ ] Select hosting and managed services.
-- [ ] Implement Prodexa API skeleton.
+- [x] Select backend stack (TypeScript / Node.js / Fastify).
+- [x] Select hosting architecture (local now; dedicated VPS/Docker later; do not use apex WordPress as API).
+- [x] Implement Prodexa API skeleton (health only).
 - [ ] Implement tenant/site identity.
 - [ ] Implement license validation.
 - [ ] Implement cache layer.
 - [ ] Implement connector interface.
 - [ ] Implement first permitted connector.
-- [ ] Implement normalized offer schema.
+- [x] Implement normalized offer schema (TypeScript types + validator).
 - [ ] Implement deterministic pricing.
 - [ ] Implement ranking baseline.
 - [ ] Implement WordPress plugin skeleton.

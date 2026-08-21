@@ -194,17 +194,24 @@ AI must not be trusted alone for:
 
 ## 12. Technology Selection
 
-Technology choices remain open until implementation planning. The selected stack must support:
+Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, DEC-017):
+
+- **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
+- **Plugin:** PHP on the merchant WordPress/WooCommerce site (client only).
+- **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites).
+- **Cache:** Redis, introduced with search/license persistence.
+- **Auth (plugin → API):** per-site server-side credentials; no browser-held site secret.
+- **Local run:** `HOST=0.0.0.0` and `PORT` from the environment.
+- **Production:** dedicated VPS/Docker or equivalent isolated Node runtime after human authorization. The inspected apex WordPress site on `prodexaai.cloud` is not the API.
+
+The stack must continue to support:
 
 - Async/concurrent HTTP retrieval.
 - Background jobs.
 - Fast cache access.
-- PostgreSQL or equivalent durable storage where needed.
 - Strong API authentication.
 - Observability.
 - Horizontal scaling.
-
-Do not lock a framework merely for convenience before validating the workload.
 
 ## 13. Scaling Path
 

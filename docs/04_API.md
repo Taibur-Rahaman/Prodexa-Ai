@@ -13,7 +13,9 @@
 
 ## 2. Base URL
 
-Production base URL will be selected during deployment and documented in environment configuration. Do not hard-code a production domain in source code.
+Local default: `http://localhost:8000` (`HOST` + `PORT`).
+
+Production base URL will be selected during deployment and documented in environment configuration. Do not hard-code a production domain in source code. Do not use `api.prodexaai.cloud` until that hostname is verified to exist.
 
 ## 3. Versioning
 
@@ -23,7 +25,28 @@ Initial API namespace:
 
 Breaking changes require a new API version or an explicit migration strategy.
 
-## 4. Search Endpoint
+## 4. Health
+
+Public liveness (no tenant data, no license check):
+
+- `GET /health`
+- `GET /v1/health`
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "service": "prodexa-api",
+  "api_version": "v1"
+}
+```
+
+Every response includes `x-request-id`. These routes must not return secrets, stack traces, or connector internals.
+
+Authenticated operator health remains `GET /v1/admin/health` and is not implemented yet.
+
+## 5. Search Endpoint
 
 `POST /v1/discovery/search`
 
@@ -68,13 +91,13 @@ Breaking changes require a new API version or an explicit migration strategy.
 
 Customer responses must not contain private source credentials, internal tenant data, or hidden operational secrets.
 
-## 5. Offer Selection
+## 6. Offer Selection
 
 `POST /v1/discovery/select`
 
 The selection endpoint creates a server-verifiable reference to the selected offer. It must revalidate important offer data before allowing it to become the source of an order.
 
-## 6. License Endpoints
+## 7. License Endpoints
 
 Examples:
 
@@ -84,13 +107,13 @@ Examples:
 
 License endpoints must enforce domain/site binding and server-side subscription status.
 
-## 7. Usage
+## 8. Usage
 
 `GET /v1/usage`
 
 Returns usage for the authenticated tenant/site only.
 
-## 8. Admin Endpoints
+## 9. Admin Endpoints
 
 Admin endpoints are private and require stronger authentication and authorization. Examples:
 
@@ -101,7 +124,7 @@ Admin endpoints are private and require stronger authentication and authorizatio
 - `GET /v1/admin/connectors`
 - `GET /v1/admin/health`
 
-## 9. Error Format
+## 10. Error Format
 
 ```json
 {
@@ -115,17 +138,19 @@ Admin endpoints are private and require stronger authentication and authorizatio
 
 Error messages must not leak credentials, SQL details, internal stack traces, or sensitive source information.
 
-## 10. Idempotency
+## 11. Idempotency
 
 Mutation endpoints that may be retried should support idempotency keys.
 
-## 11. Rate Limiting
+## 12. Rate Limiting
 
 Rate limits will be defined by plan and endpoint. The server must return a clear machine-readable error when a tenant exceeds its allowance.
 
-## 12. Authentication
+## 13. Authentication
 
-The exact authentication scheme is intentionally open. It must support:
+Locked direction (DEC-017): plugin-to-API authentication is site-scoped and server-side. Wire format (HMAC vs short-lived site token) is documented when license endpoints ship.
+
+It must support:
 
 - Site identity.
 - Credential rotation.
@@ -135,6 +160,6 @@ The exact authentication scheme is intentionally open. It must support:
 
 Never use a single global API secret embedded in the distributed WordPress plugin.
 
-## 13. Webhooks / Future
+## 14. Webhooks / Future
 
 Future versions may expose webhooks for license changes, connector status, or fulfillment events. Webhook signatures must be verified before processing.

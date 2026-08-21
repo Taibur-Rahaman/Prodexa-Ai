@@ -2,6 +2,22 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 1: API skeleton and stack lock
+
+### Added
+
+- TypeScript Fastify API in `apps/api` with public liveness `GET /health` and `GET /v1/health`.
+- Canonical `NormalizedOffer` TypeScript type and runtime validator.
+- Root README and npm workspace.
+
+### Decision
+
+Locked DEC-014 (Node.js/TypeScript/Fastify), DEC-015 (PostgreSQL + Redis), DEC-016 (do not deploy API into inspected apex WordPress; no unapproved subdomains/VPS), DEC-017 (site-scoped server-side plugin authentication).
+
+### Implementation Status
+
+Local API health is tested. License, discovery, connectors, plugin, production deploy, and `api.prodexaai.cloud` are not claimed. Hostinger was inspected only; no DNS, files, or VPS changes.
+
 ## 2026-08-21 — Autonomous Development & Backend Infrastructure Baseline
 
 ### Added

@@ -25,7 +25,7 @@ normalize(raw) -> normalized offer
 health() -> connector health
 ```
 
-Exact implementation language and interface are implementation decisions.
+Implementation language is TypeScript on the Prodexa API (DEC-014).
 
 ## Normalized Offer
 

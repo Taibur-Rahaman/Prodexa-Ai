@@ -112,6 +112,54 @@ AI tools must not silently reverse a locked decision.
 
 **Consequences:** Infrastructure changes must be inspected before modification and verified afterward. DNS/server/deployment state must never be guessed. Destructive production infrastructure changes require explicit human authorization.
 
+## DEC-014 — Backend Runtime
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** The Prodexa API is implemented in TypeScript on Node.js 22+, using Fastify. The WordPress plugin remains PHP and is a client only.
+
+**Why:** Architecture requires concurrent HTTP, a versioned JSON API, and a runtime separate from WordPress. Hostinger Cloud Economy on this account already runs Node.js applications, so the same language family can be operated later without putting discovery inside PHP request execution.
+
+**Alternatives considered:** Python/FastAPI (strong for later AI matching, but not required for the API skeleton and less aligned with existing Hostinger Node.js operations); PHP API on the apex WordPress host (conflicts with DEC-002/DEC-003).
+
+**Consequences:** Shared types and API tests live under `apps/api`. AI matching may still call an external model over HTTP; AI remains assistive (DEC-009).
+
+## DEC-015 — Pilot Data Stores
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** PostgreSQL is the canonical durable store. Redis is the canonical cache. Local development will introduce them when license/search persistence is implemented. Shared Hostinger MySQL used by other sites on the same plan must not be reused as the Prodexa system of record.
+
+**Why:** Architecture requires durable tenant/license data and fast cache. The inspected Hostinger plan exposes MySQL shared with unrelated websites and has no Redis or PostgreSQL service. Mixing Prodexa tenant data into that shared MySQL estate is a tenant-isolation and blast-radius risk.
+
+**Alternatives considered:** SQLite (insufficient for multi-tenant SaaS path); Hostinger shared MySQL (available, but not isolated enough for the system of record).
+
+**Consequences:** Production API deploy waits for a dedicated data plane (VPS/Docker or equivalent). Human authorization is required before purchasing a VPS or creating databases.
+
+## DEC-016 — Hosting Topology After Inspection
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Develop and test the API locally. Do not deploy the discovery API into the WordPress document root on `prodexaai.cloud`. Do not create `api.prodexaai.cloud` or other subdomains until a dedicated runtime exists and a human authorizes DNS/hosting changes. Pilot production target is a dedicated Hostinger VPS/Docker (or equivalent isolated Node.js runtime), which did not exist at inspection.
+
+**Why:** Read-only Hostinger inspection on 2026-08-21 found: DNS for `prodexaai.cloud` at Hostinger; the domain is not registered through Hostinger Domains; an addon website on Cloud Economy shared hosting with a WordPress install (including `wp-config.php`); no VPS; no `api.prodexaai.cloud` record; no Node.js deployment on this domain. Apex HTTP from this network returned Hostinger CDN 408. Putting connectors and license authority inside that WordPress tree would violate DEC-002.
+
+**Alternatives considered:** Convert the existing apex WordPress site into the API (rejected); auto-create `api.prodexaai.cloud` (rejected — subdomain creation requires human authorization).
+
+**Consequences:** The WordPress files already on the apex are not treated as the Prodexa API. They must not be deleted or overwritten without explicit human authorization. `api.prodexaai.cloud` is still a possible future name only.
+
+## DEC-017 — Site Authentication Scheme
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** Protected plugin-to-API calls authenticate a site (not a browser user) with a server-side credential pair: site/license identity plus a secret that never ships to visitors. Requests use HTTPS and include a request ID. The exact wire format (HMAC headers vs short-lived site tokens) will be documented in `04_API.md` when the license endpoints are implemented. Browser JavaScript must not hold the site secret. A single global secret must not be embedded in the distributed plugin.
+
+**Why:** API spec requires site identity, rotation, and revocation. License enforcement is server-side (DEC-008). WordPress is an untrusted client from the API's perspective.
+
+**Alternatives considered:** Shared plugin-wide API key (rejected); trusting WordPress capability checks as Prodexa authorization (rejected).
+
+**Consequences:** License validation, discovery, and usage endpoints remain unimplemented until this scheme is built. No fake license API is provided in the meantime.
+
 ## Change Protocol
 
 Before changing a locked decision:

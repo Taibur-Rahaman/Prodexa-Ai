@@ -10,7 +10,7 @@ Prodexa AI is being built as a product-discovery engine with a WordPress/WooComm
 
 ## Current Stage
 
-Pilot-first. The first goal is to validate the system on the owner's own commerce operation before commercial SaaS launch.
+Pilot-first. Last completed autonomous loop: **1**. Milestone: Phase 1 — Pilot MVP (in progress).
 
 ## Locked Architecture
 
@@ -21,6 +21,11 @@ Pilot-first. The first goal is to validate the system on the owner's own commerc
 - Customer pays merchant through existing checkout.
 - Initial fulfillment is manual.
 - License enforcement is server-side.
+- API runtime: TypeScript / Node.js 22+ / Fastify (`apps/api`).
+- Durable store: PostgreSQL (not shared Hostinger MySQL).
+- Cache: Redis (not yet provisioned).
+- Plugin→API auth: per-site server-side credentials; no browser-held site secret.
+- Canonical domain `prodexaai.cloud`; `api.prodexaai.cloud` does not exist.
 
 ## Locked Product Principles
 
@@ -31,6 +36,15 @@ Pilot-first. The first goal is to validate the system on the owner's own commerc
 - Keep source/order traceability for authorized admins.
 - AI assists but does not control financial truth.
 - Do not bypass source access controls.
+
+## Hostinger (inspected 2026-08-21, no changes)
+
+- DNS for `prodexaai.cloud` is at Hostinger. Domain is not registered through Hostinger Domains.
+- Shared Cloud Economy addon site exists. WordPress files including `wp-config.php` are present. That tree is **not** the Prodexa API.
+- No VPS. No API subdomain. No Node.js deployment on this domain.
+- Apex HTTPS probe returned CDN 408. Do not treat production API as live.
+- Do not delete/overwrite the apex WordPress files or create subdomains without human authorization.
+- Do not deploy discovery into that WordPress document root.
 
 ## Documentation Protocol
 
@@ -43,13 +57,12 @@ When a meaningful decision changes, update:
 
 ## Current Unknowns
 
-- Backend framework.
-- Hosting provider.
-- Cache provider.
-- Database details.
-- AI provider.
+- AI provider/model.
 - Billing provider.
 - First production connector set.
+- Production API hostname (not created).
+- Dedicated VPS/Docker (does not exist; purchase needs human authorization).
+- Whether the existing apex WordPress install on `prodexaai.cloud` should remain.
 
 ## AI Working Style
 

@@ -116,6 +116,8 @@ If Prodexa API is unavailable:
 
 The plugin should target supported WordPress and WooCommerce versions defined at release time. Compatibility claims must be tested rather than assumed.
 
+The plugin is not in this repository yet. PHP 8.2+ is the expected plugin runtime on merchant sites. The WordPress tree currently present on apex `prodexaai.cloud` is not the Prodexa plugin and must not be overwritten without human authorization.
+
 ## Security
 
 Follow WordPress security practices:

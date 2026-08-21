@@ -241,12 +241,14 @@ AI coding tools must follow `AI_RULES.md` and update relevant memory/decision/ch
 
 The following remain intentionally unlocked until technical validation:
 
-- Exact backend language/framework.
-- Exact hosting provider.
 - Search/index technology.
 - AI provider/model.
 - Initial subscription prices.
 - Exact number of source connectors for the pilot.
 - Exact cache TTL per source.
+- Production API hostname (not created).
+- Dedicated VPS purchase (human authorization required).
+
+Locked in `02_BUSINESS_DECISIONS.md`: backend runtime (DEC-014), data stores (DEC-015), hosting topology (DEC-016), site authentication direction (DEC-017), Hostinger as current infrastructure provider (DEC-013).
 
 Any decision that becomes irreversible or materially affects architecture must be recorded in `BUSINESS_DECISIONS.md`.
