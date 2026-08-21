@@ -29,35 +29,55 @@ The plugin must not:
 ## Proposed Structure
 
 ```text
-prodexa-ai/
+plugins/prodexa-ai/
 ├── prodexa-ai.php
+├── uninstall.php
+├── readme.txt
 ├── includes/
 │   ├── class-plugin.php
+│   ├── class-activator.php
+│   ├── class-deactivator.php
+│   ├── class-settings.php
+│   ├── class-admin.php
 │   ├── class-api-client.php
+│   ├── class-hmac.php
 │   ├── class-license.php
-│   ├── class-search.php
-│   ├── class-checkout.php
-│   ├── class-order-meta.php
-│   └── class-admin.php
-├── assets/
-│   ├── css/
-│   └── js/
+│   ├── class-sanitizer.php
+│   ├── class-secrets.php
+│   └── class-http-result.php
 ├── templates/
-├── languages/
-└── readme.txt
+│   └── admin-settings.php
+└── tests/
 ```
 
-The exact structure may change during implementation, but responsibility boundaries should remain stable.
+Search, checkout, and order-metadata classes are not in the skeleton. Responsibility boundaries above still apply when those features are added.
+
+## Skeleton (T-014)
+
+Shipped in `plugins/prodexa-ai/`:
+
+- Bootstrap with PHP 8.2+ activation check; deactivation keeps options; uninstall deletes settings and sealed secrets.
+- Settings API page (capability `manage_options`): API base URL, timeout, site ID, site secret, license key.
+- Site secret and license key are encrypted at rest with a key derived from WordPress salts. Password fields are never prefilled. Nothing is localized into JavaScript.
+- HTTP client with timeouts, no redirects, HMAC-SHA256 for protected routes (DEC-018). `GET /v1/health` is unsigned. `POST /v1/license/validate` is signed when credentials exist.
+- Cached license snapshot is operator display only. `Prodexa_AI_License::cached_state_authorizes_access()` is always false. The API remains authoritative.
+- `POST /v1/license/activate` and `POST /v1/license/deactivate` are not called; stored license keys wait for those endpoints.
+
+Not in this skeleton: storefront search, WooCommerce checkout/order metadata, product sync, connectors, pricing, ranking, or AI UI.
+
+Run `php plugins/prodexa-ai/tests/run.php` (no WordPress install required). Do not deploy the plugin onto apex `prodexaai.cloud` without human authorization.
 
 ## License Behavior
 
-On activation:
+On activation (target flow; `POST /v1/license/activate` is not implemented yet):
 
 1. Merchant enters license key.
 2. Plugin sends license/site information to Prodexa API.
 3. Server validates subscription.
 4. Server returns only the minimum information needed by the plugin.
 5. Plugin stores non-secret activation state securely.
+
+The T-014 skeleton stores the license key sealed on the merchant server and can refresh status via `POST /v1/license/validate`. It does not treat a stored key or cached snapshot as authorization.
 
 On normal use:
 
@@ -116,7 +136,7 @@ If Prodexa API is unavailable:
 
 The plugin should target supported WordPress and WooCommerce versions defined at release time. Compatibility claims must be tested rather than assumed.
 
-The plugin is not in this repository yet. PHP 8.2+ is the expected plugin runtime on merchant sites. The WordPress tree currently present on apex `prodexaai.cloud` is not the Prodexa plugin and must not be overwritten without human authorization.
+PHP 8.2+ is the expected plugin runtime on merchant sites. Requires WordPress 6.4+. WooCommerce integration is specified above but is not implemented in the T-014 skeleton. The WordPress tree currently present on apex `prodexaai.cloud` is not the Prodexa plugin and must not be overwritten without human authorization.
 
 ## Security
 

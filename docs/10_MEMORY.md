@@ -10,7 +10,7 @@ Prodexa AI is being built as a product-discovery engine with a WordPress/WooComm
 
 ## Current Stage
 
-Pilot / MVP. Last completed autonomous loop: **4**. Milestone: Phase 1 — Pilot MVP (in progress).
+Pilot / MVP. Last completed autonomous loop: **6**. Milestone: Phase 1 — Pilot MVP (in progress).
 
 ## Locked Architecture
 
@@ -28,6 +28,8 @@ Pilot / MVP. Last completed autonomous loop: **4**. Milestone: Phase 1 — Pilot
 - Canonical domain `prodexaai.cloud`; `api.prodexaai.cloud` does not exist.
 - License validation is local-only: PostgreSQL model + `POST /v1/license/validate` with optional Redis cache (T-011). Activate/deactivate are not implemented.
 - Discovery search is local-only: HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers` (T-012). No connectors, ranking, pricing engine, or Redis search cache. `POST /v1/discovery/select` is not implemented.
+- WordPress plugin skeleton is in `plugins/prodexa-ai/` (T-014): settings, sealed site credentials, HMAC client, health check, display-only license refresh. Storefront search, WooCommerce checkout, and connectors are not implemented.
+- **T-013 remains BLOCKED:** first connector source is not decided. Do not guess a connector.
 
 ## Locked Product Principles
 

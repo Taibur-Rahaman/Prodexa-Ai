@@ -8,13 +8,13 @@ Canonical backend domain: `prodexaai.cloud`. Do not assume `api.prodexaai.cloud`
 
 ## Status
 
-Pilot / MVP. Documentation foundation is in `docs/`. Local API: liveness, PostgreSQL-backed `POST /v1/license/validate` with optional Redis cache, and HMAC `POST /v1/discovery/search` against a tenant-scoped offer index. Connectors, plugin runtime, and production deploy are not implemented.
+Pilot / MVP. Documentation foundation is in `docs/`. Local API: liveness, PostgreSQL-backed `POST /v1/license/validate` with optional Redis cache, and HMAC `POST /v1/discovery/search` against a tenant-scoped offer index. WordPress plugin skeleton is in `plugins/prodexa-ai/`. Connectors and production deploy are not implemented.
 
 ## Repository layout
 
 - `docs/` — source of truth (constitution, PRD, architecture, API, license, security).
 - `apps/api/` — TypeScript Fastify API (Node.js 22+).
-- WordPress plugin — not in this repository yet.
+- `plugins/prodexa-ai/` — WordPress client plugin (skeleton: settings, HMAC client, health check).
 
 ## Local API
 
@@ -35,6 +35,16 @@ License (local; requires `DATABASE_URL` + `API_SIGNING_SECRET` for a real Postgr
 - `POST /v1/discovery/search` (searches tenant-scoped `normalized_offers`; empty until seeded or connectors exist)
 
 Bind address comes from `HOST` (default `0.0.0.0`) and `PORT` (default `8000`). Copy `.env.example` to `.env` locally. Never commit real credentials.
+
+## WordPress plugin
+
+Copy `plugins/prodexa-ai/` into a WordPress `wp-content/plugins/` directory, or symlink it for local work. Settings → Prodexa AI configures the API base URL (local default `http://localhost:8000`), site ID, and site secret.
+
+```bash
+php plugins/prodexa-ai/tests/run.php
+```
+
+Do not install this plugin over the apex WordPress tree on `prodexaai.cloud` without human authorization.
 
 ## Source of truth
 

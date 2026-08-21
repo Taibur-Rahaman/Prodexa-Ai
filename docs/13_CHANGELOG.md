@@ -2,6 +2,22 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 6: WordPress plugin skeleton
+
+### Added
+
+- WordPress plugin client in `plugins/prodexa-ai/` (bootstrap, activation/deactivation/uninstall, Settings API, sealed site credentials, HMAC HTTP client).
+- Admin health check against `GET /v1/health` and display-only license refresh against `POST /v1/license/validate`.
+- Plugin tests that do not require a WordPress install (`php plugins/prodexa-ai/tests/run.php`).
+
+### Decision
+
+No new locked business decision. DEC-002/DEC-003 (plugin is a client), DEC-008 (server-side license authority), and DEC-018 (HMAC) are unchanged. T-013 remains BLOCKED; no connector was selected.
+
+### Implementation Status
+
+Plugin skeleton only. Storefront search, WooCommerce checkout/order metadata, product sync, connectors, billing, AI/RAG, production deploy, and `api.prodexaai.cloud` are not claimed. Hostinger was not inspected or changed. Apex `prodexaai.cloud` WordPress was not modified.
+
 ## 2026-08-21 — Loop 4: Discovery search endpoint
 
 ### Added

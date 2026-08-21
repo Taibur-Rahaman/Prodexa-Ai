@@ -28,7 +28,7 @@
 - [x] Implement normalized offer schema (TypeScript types + validator).
 - [ ] Implement deterministic pricing.
 - [ ] Implement ranking baseline.
-- [ ] Implement WordPress plugin skeleton.
+- [x] Implement WordPress plugin skeleton.
 - [ ] Integrate storefront discovery UI.
 - [ ] Integrate WooCommerce order metadata.
 - [ ] Add end-to-end tests.

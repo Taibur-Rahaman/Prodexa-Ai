@@ -8,6 +8,7 @@
 | 2 | 2026-08-21 | COMPLETE | PostgreSQL license model + HMAC `POST /v1/license/validate`. Hostinger inspected read-only; no infra change. |
 | 3 | 2026-08-21 | COMPLETE | Optional Redis cache for license validation extras (`REDIS_URL`). HMAC/replay/status stay on PostgreSQL. Hostinger unchanged. |
 | 4 | 2026-08-21 | COMPLETE | HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers`. No connectors/Hostinger change. |
+| 6 | 2026-08-21 | COMPLETE | WordPress plugin skeleton in `plugins/prodexa-ai/`. T-013 remains BLOCKED. Hostinger unchanged. |
 
 ## Completed
 
@@ -85,13 +86,20 @@
 - **Tests:** `apps/api/src/discovery.search.test.ts`, `apps/api/src/discovery/query.test.ts`
 - **Docs:** `04_API.md`, `03_ARCHITECTURE.md`
 
+### T-014 — WordPress plugin skeleton
+- **Priority:** P2
+- **Status:** done (plugin client only; not deployed; apex WordPress on `prodexaai.cloud` untouched)
+- **Files:** `plugins/prodexa-ai/`
+- **Tests:** `php plugins/prodexa-ai/tests/run.php` (HMAC, sanitizer, settings, HTTP client, nonce/capability, bootstrap)
+- **Docs:** `05_WORDPRESS_PLUGIN.md`, `03_ARCHITECTURE.md`
+
 ## Now
 
-- [ ] **T-013** Build first permitted connector. P2
-- [ ] **T-014** Build WordPress plugin skeleton. P2
+- [ ] **T-013** Build first permitted connector. P2 — **BLOCKED**: first connector source is not decided. Do not guess a connector.
 
 ## Next
 
+- [ ] T-014 follow-up: storefront discovery UI (plugin skeleton has no search rendering).
 - [ ] Add WooCommerce order metadata.
 - [ ] Add pricing engine.
 - [ ] Add ranking baseline.

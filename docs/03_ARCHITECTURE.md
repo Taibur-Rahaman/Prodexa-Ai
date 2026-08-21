@@ -63,6 +63,8 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
+Pilot implementation (T-014): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, and a display-only `POST /v1/license/validate` refresh. Search UI, checkout, order metadata, and WooCommerce hooks are not implemented. Cached license state in WordPress is never treated as authorization.
+
 ## 5. Backend Responsibilities
 
 The backend is responsible for:
@@ -201,7 +203,7 @@ AI must not be trusted alone for:
 Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, DEC-017, DEC-018):
 
 - **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
-- **Plugin:** PHP on the merchant WordPress/WooCommerce site (client only).
+- **Plugin:** PHP 8.2+ on the merchant WordPress/WooCommerce site (client only). Repository path `plugins/prodexa-ai`. No production API hostname is hard-coded.
 - **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites). Tenant-scoped `normalized_offers` is the pilot discovery search corpus.
 - **Cache:** Redis via `REDIS_URL` (optional). Production uses a real Redis client (`ioredis`). License validation does not depend on Redis; PostgreSQL remains authoritative for HMAC, replay, and license status.
 - **Auth (plugin → API):** per-site HMAC-SHA256 (DEC-018); secrets stay server-side and never in the browser.
