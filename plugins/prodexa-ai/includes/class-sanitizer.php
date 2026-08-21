@@ -157,4 +157,44 @@ final class Prodexa_AI_Sanitizer
     {
         return rtrim($base, '/') . '/' . ltrim($path, '/');
     }
+
+    /**
+     * Allow only http(s) URLs for customer-visible images. Drops credentials and fragments.
+     */
+    public static function sanitize_public_http_url(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '' || strlen($value) > 2048) {
+            return '';
+        }
+
+        $parts = parse_url($value);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        $scheme = strtolower((string) $parts['scheme']);
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return '';
+        }
+
+        if (isset($parts['user']) || isset($parts['pass'])) {
+            return '';
+        }
+
+        $host = strtolower((string) $parts['host']);
+        if ($host === '' || str_contains($host, '..') || str_contains($host, '[') || str_contains($host, ' ')) {
+            return '';
+        }
+
+        $path = isset($parts['path']) ? (string) $parts['path'] : '';
+        if (str_contains($path, '..')) {
+            return '';
+        }
+
+        $port = isset($parts['port']) ? ':' . (int) $parts['port'] : '';
+        $query = isset($parts['query']) ? '?' . (string) $parts['query'] : '';
+
+        return $scheme . '://' . $host . $port . $path . $query;
+    }
 }

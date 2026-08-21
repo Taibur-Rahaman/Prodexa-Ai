@@ -78,11 +78,12 @@ $t::assert_false(preg_match('/x-prodexa-signature|hmac/i', $html) === 1, 'admin 
 
 $plugin_root = dirname(__DIR__);
 $javascript = glob($plugin_root . '/assets/js/*.js') ?: [];
+$t::assert_true($javascript !== [], 'storefront JavaScript is present');
 foreach ($javascript as $file) {
     $contents = (string) file_get_contents($file);
     $t::assert_false(
         str_contains($contents, 'must-never-render') || preg_match('/site_secret|license_key|x-prodexa-signature/i', $contents) === 1,
         basename($file) . ' must not contain secrets'
     );
+    $t::assert_false(str_contains($contents, 'innerHTML'), basename($file) . ' must not use innerHTML');
 }
-$t::assert_true(true, 'no admin JavaScript ships with the skeleton (or it is free of secrets)');

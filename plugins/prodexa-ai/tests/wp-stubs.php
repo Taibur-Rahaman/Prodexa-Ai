@@ -38,6 +38,27 @@ final class Prodexa_AI_Test_State
     /** @var array<string, mixed> */
     public static array $registered_settings = [];
 
+    /** @var array<string, callable> */
+    public static array $shortcodes = [];
+
+    /** @var array<string, array{src: string, deps: array, ver: mixed, in_footer: bool}> */
+    public static array $scripts = [];
+
+    /** @var array<string, array{src: string, deps: array, ver: mixed}> */
+    public static array $styles = [];
+
+    /** @var list<string> */
+    public static array $enqueued_scripts = [];
+
+    /** @var list<string> */
+    public static array $enqueued_styles = [];
+
+    /** @var array<string, array{name: string, data: array<string, mixed>}> */
+    public static array $localized = [];
+
+    /** @var array{response: mixed, status: ?int}|null */
+    public static ?array $json = null;
+
     public static bool $is_admin = true;
 
     public static bool $can_manage = true;
@@ -49,6 +70,13 @@ final class Prodexa_AI_Test_State
         self::$options = [];
         self::$settings_errors = [];
         self::$registered_settings = [];
+        self::$shortcodes = [];
+        self::$scripts = [];
+        self::$styles = [];
+        self::$enqueued_scripts = [];
+        self::$enqueued_styles = [];
+        self::$localized = [];
+        self::$json = null;
         self::$is_admin = true;
         self::$can_manage = true;
         self::$home_url = 'https://shop.example.com';
@@ -161,6 +189,11 @@ function esc_html__(string $text, string $domain = 'default'): string
     return esc_html($text);
 }
 
+function esc_attr__(string $text, string $domain = 'default'): string
+{
+    return esc_attr($text);
+}
+
 function esc_html(string $text): string
 {
     return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
@@ -180,9 +213,22 @@ function sanitize_key(string $key): string
 
 function sanitize_text_field(string $str): string
 {
-    $str = strip_tags($str);
+    $str = wp_strip_all_tags($str);
 
     return trim($str);
+}
+
+function wp_strip_all_tags(string $string, bool $remove_breaks = false): string
+{
+    $stripped = preg_replace('@<(script|style)[^>]*?>.*?</\\1>@si', '', $string);
+    $string = is_string($stripped) ? $stripped : $string;
+    $string = strip_tags($string);
+    if ($remove_breaks) {
+        $collapsed = preg_replace('/[\r\n\t ]+/', ' ', $string);
+        $string = is_string($collapsed) ? $collapsed : $string;
+    }
+
+    return trim($string);
 }
 
 function wp_unslash(mixed $value): mixed
@@ -271,6 +317,156 @@ function is_wp_error(mixed $thing): bool
 function wp_remote_request(string $url, array $args = []): array|WP_Error
 {
     return new WP_Error('http_request_not_executed', 'No transport configured.');
+}
+
+function add_shortcode(string $tag, callable $callback): void
+{
+    Prodexa_AI_Test_State::$shortcodes[$tag] = $callback;
+}
+
+/**
+ * @param array<string, mixed> $pairs
+ * @param array<string, mixed>|string $atts
+ * @return array<string, mixed>
+ */
+function shortcode_atts(array $pairs, array|string $atts, string $shortcode = ''): array
+{
+    if (!is_array($atts)) {
+        $atts = [];
+    }
+
+    return array_merge($pairs, array_intersect_key($atts, $pairs));
+}
+
+function admin_url(string $path = ''): string
+{
+    return 'https://shop.example.com/wp-admin/' . ltrim($path, '/');
+}
+
+function esc_url(string $url): string
+{
+    return htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+}
+
+function absint(mixed $maybeint): int
+{
+    return abs((int) $maybeint);
+}
+
+function wp_create_nonce(string $action): string
+{
+    return 'nonce-' . $action;
+}
+
+function wp_verify_nonce(string $nonce, string $action): false|int
+{
+    return $nonce === 'nonce-' . $action ? 1 : false;
+}
+
+function check_ajax_referer(string $action, false|string $query_arg = false, bool $stop = true): false|int
+{
+    $nonce = '';
+    if (is_string($query_arg) && $query_arg !== '' && isset($_REQUEST[$query_arg])) {
+        $nonce = (string) $_REQUEST[$query_arg];
+    } elseif (isset($_REQUEST['_ajax_nonce'])) {
+        $nonce = (string) $_REQUEST['_ajax_nonce'];
+    } elseif (isset($_REQUEST['_wpnonce'])) {
+        $nonce = (string) $_REQUEST['_wpnonce'];
+    }
+
+    $valid = wp_verify_nonce($nonce, $action);
+    if ($valid !== false) {
+        return $valid;
+    }
+    if ($stop) {
+        wp_die('-1', '', ['response' => 403]);
+    }
+
+    return false;
+}
+
+/**
+ * @param mixed $response
+ */
+function wp_send_json(mixed $response, ?int $status_code = null): void
+{
+    Prodexa_AI_Test_State::$json = [
+        'response' => $response,
+        'status' => $status_code,
+    ];
+    throw new RuntimeException('wp_send_json');
+}
+
+/**
+ * @param mixed $data
+ */
+function wp_send_json_success(mixed $data = null, ?int $status_code = null): void
+{
+    wp_send_json(['success' => true, 'data' => $data], $status_code ?? 200);
+}
+
+/**
+ * @param mixed $data
+ */
+function wp_send_json_error(mixed $data = null, ?int $status_code = null): void
+{
+    wp_send_json(['success' => false, 'data' => $data], $status_code ?? 200);
+}
+
+function wp_register_script(string $handle, string $src, array $deps = [], mixed $ver = false, bool $in_footer = false): bool
+{
+    Prodexa_AI_Test_State::$scripts[$handle] = [
+        'src' => $src,
+        'deps' => $deps,
+        'ver' => $ver,
+        'in_footer' => $in_footer,
+    ];
+
+    return true;
+}
+
+function wp_register_style(string $handle, string $src, array $deps = [], mixed $ver = false): bool
+{
+    Prodexa_AI_Test_State::$styles[$handle] = [
+        'src' => $src,
+        'deps' => $deps,
+        'ver' => $ver,
+    ];
+
+    return true;
+}
+
+function wp_enqueue_script(string $handle, string $src = '', array $deps = [], mixed $ver = false, bool $in_footer = false): void
+{
+    if ($src !== '') {
+        wp_register_script($handle, $src, $deps, $ver, $in_footer);
+    }
+    if (!in_array($handle, Prodexa_AI_Test_State::$enqueued_scripts, true)) {
+        Prodexa_AI_Test_State::$enqueued_scripts[] = $handle;
+    }
+}
+
+function wp_enqueue_style(string $handle, string $src = '', array $deps = [], mixed $ver = false): void
+{
+    if ($src !== '') {
+        wp_register_style($handle, $src, $deps, $ver);
+    }
+    if (!in_array($handle, Prodexa_AI_Test_State::$enqueued_styles, true)) {
+        Prodexa_AI_Test_State::$enqueued_styles[] = $handle;
+    }
+}
+
+/**
+ * @param array<string, mixed> $l10n
+ */
+function wp_localize_script(string $handle, string $object_name, array $l10n): bool
+{
+    Prodexa_AI_Test_State::$localized[$handle] = [
+        'name' => $object_name,
+        'data' => $l10n,
+    ];
+
+    return true;
 }
 
 final class WP_Error

@@ -17,6 +17,8 @@ final class Prodexa_AI_Api_Client
 
     public const LICENSE_VALIDATE_PATH = '/v1/license/validate';
 
+    public const DISCOVERY_SEARCH_PATH = '/v1/discovery/search';
+
     /**
      * @param callable(string, array<string, mixed>): mixed|null $transport
      */
@@ -44,6 +46,21 @@ final class Prodexa_AI_Api_Client
         }
 
         return $this->request('POST', self::LICENSE_VALIDATE_PATH, $body, true);
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    public function search(array $body): Prodexa_AI_Http_Result
+    {
+        if (!$this->settings->has_site_credentials()) {
+            return Prodexa_AI_Http_Result::failure(
+                'MISSING_CREDENTIALS',
+                'A site ID and site secret are required before the plugin can call protected Prodexa endpoints.'
+            );
+        }
+
+        return $this->request('POST', self::DISCOVERY_SEARCH_PATH, $body, true);
     }
 
     /**

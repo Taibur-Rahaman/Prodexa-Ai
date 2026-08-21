@@ -151,6 +151,9 @@ $snapshot = $view['snapshot'];
         <?php submit_button(__('Save settings', 'prodexa-ai')); ?>
     </form>
 
+    <h2><?php echo esc_html__('Storefront search', 'prodexa-ai'); ?></h2>
+    <p><?php echo esc_html__('Add the [prodexa_search] shortcode to a page. Visitors search through WordPress; the plugin signs POST /v1/discovery/search on the server. Site secrets never go to the browser.', 'prodexa-ai'); ?></p>
+
     <h2><?php echo esc_html__('Connectivity', 'prodexa-ai'); ?></h2>
     <p><?php echo esc_html__('Calls GET /v1/health on the configured local or hosted API. This does not deploy anything and does not prove a license is valid.', 'prodexa-ai'); ?></p>
     <form method="post" action="">

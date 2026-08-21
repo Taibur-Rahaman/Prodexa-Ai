@@ -52,3 +52,12 @@ $t::assert_same(
     Prodexa_AI_Sanitizer::join_url('http://localhost:8000', '/v1/health'),
     'health path join'
 );
+
+$t::assert_same(
+    'https://cdn.example.com/p.jpg?w=200',
+    Prodexa_AI_Sanitizer::sanitize_public_http_url('https://cdn.example.com/p.jpg?w=200#frag'),
+    'image URLs keep query and drop fragment'
+);
+$t::assert_same('', Prodexa_AI_Sanitizer::sanitize_public_http_url('javascript:alert(1)'), 'javascript image URLs rejected');
+$t::assert_same('', Prodexa_AI_Sanitizer::sanitize_public_http_url('https://user:pass@cdn.example.com/p.jpg'), 'image userinfo rejected');
+$t::assert_same('', Prodexa_AI_Sanitizer::sanitize_public_http_url('data:image/gif;base64,AAAA'), 'data URLs rejected');

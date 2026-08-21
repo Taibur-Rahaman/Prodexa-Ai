@@ -41,6 +41,36 @@ final class Prodexa_AI_Test_Case
         fwrite(STDERR, "FAIL: {$detail}\n");
     }
 
+    /**
+     * @return array{type: 'json', payload: array{response: mixed, status: ?int}}|array{type: 'die', message: string}
+     */
+    public static function capture_wp_response(callable $callback): array
+    {
+        Prodexa_AI_Test_State::$json = null;
+        try {
+            $callback();
+        } catch (RuntimeException $exception) {
+            if (str_starts_with($exception->getMessage(), 'wp_die:')) {
+                return [
+                    'type' => 'die',
+                    'message' => $exception->getMessage(),
+                ];
+            }
+            if (str_contains($exception->getMessage(), 'wp_send_json')) {
+                return [
+                    'type' => 'json',
+                    'payload' => Prodexa_AI_Test_State::$json ?? ['response' => null, 'status' => null],
+                ];
+            }
+            throw $exception;
+        }
+
+        return [
+            'type' => 'json',
+            'payload' => Prodexa_AI_Test_State::$json ?? ['response' => null, 'status' => null],
+        ];
+    }
+
     public static function assert_false(bool $condition, string $message): void
     {
         self::assert_true(!$condition, $message);

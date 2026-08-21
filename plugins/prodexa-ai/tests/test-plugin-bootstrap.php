@@ -62,7 +62,8 @@ $t::assert_false(isset(Prodexa_AI_Test_State::$options['prodexa_ai_settings']), 
 $t::assert_false(isset(Prodexa_AI_Test_State::$options['prodexa_ai_secrets']), 'uninstall deletes secrets');
 $t::assert_false(isset(Prodexa_AI_Test_State::$options['prodexa_ai_license_snapshot']), 'uninstall deletes snapshot');
 
-Prodexa_AI_Test_State::$is_admin = true;
+Prodexa_AI_Test_State::$is_admin = false;
 do_action('plugins_loaded');
 $t::assert_true(function_exists('prodexa_ai'), 'plugin function is available after load');
 $t::assert_true(prodexa_ai() instanceof Prodexa_AI_Plugin, 'plugin instance boots');
+$t::assert_true(isset(Prodexa_AI_Test_State::$shortcodes['prodexa_search']), 'storefront shortcode registers on the frontend');
