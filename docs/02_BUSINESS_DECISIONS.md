@@ -103,6 +103,15 @@ AI tools must not silently reverse a locked decision.
 
 **Why:** Cursor and other AI tools need durable context and a clear reason for every material change.
 
+## DEC-013 — Canonical Backend Infrastructure Domain
+
+**Status:** LOCKED  
+**Decision:** `prodexaai.cloud` is the canonical Prodexa backend/infrastructure domain. Hostinger is the current infrastructure provider available through Hostinger MCP. Backend service subdomains are created only when required by the architecture and verified before use.
+
+**Why:** A stable canonical infrastructure domain gives the backend a consistent operational identity while allowing API, admin, webhook, and health services to be separated later without prematurely creating unnecessary services.
+
+**Consequences:** Infrastructure changes must be inspected before modification and verified afterward. DNS/server/deployment state must never be guessed. Destructive production infrastructure changes require explicit human authorization.
+
 ## Change Protocol
 
 Before changing a locked decision:
