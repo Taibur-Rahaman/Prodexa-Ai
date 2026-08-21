@@ -158,7 +158,7 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Shared plugin-wide API key (rejected); trusting WordPress capability checks as Prodexa authorization (rejected).
 
-**Consequences:** `POST /v1/license/validate` and `POST /v1/discovery/search` use this scheme (DEC-018). `POST /v1/discovery/select` and usage remain unimplemented. No fake license API is provided.
+**Consequences:** `POST /v1/license/validate`, `POST /v1/discovery/search`, and `POST /v1/discovery/select` use this scheme (DEC-018). Usage remains unimplemented. No fake license API is provided.
 
 ## DEC-018 — Plugin-to-API HMAC Wire Format
 
@@ -170,7 +170,19 @@ AI tools must not silently reverse a locked decision.
 
 **Alternatives considered:** Short-lived site bearer tokens (also allowed by DEC-017; deferred to keep validation from depending on a token issuer). Redis nonce cache (canonical cache remains Redis per DEC-015, but T-011 is a later task; durable replay records fit PostgreSQL).
 
-**Consequences:** `POST /v1/license/activate` and `POST /v1/license/deactivate` are not implemented yet. `POST /v1/discovery/search` reuses the same HMAC/nonce checks; the search body has no `domain` field, so license evaluation uses the site's stored activation domain. Tests use an in-process PostgreSQL engine (PGlite) against the same SQL as production `pg`. Production license and offer-index data must use PostgreSQL via `DATABASE_URL`, never an in-memory map.
+**Consequences:** `POST /v1/license/activate` and `POST /v1/license/deactivate` are not implemented yet. `POST /v1/discovery/search` and `POST /v1/discovery/select` reuse the same HMAC/nonce checks; those bodies have no `domain` field, so license evaluation uses the site's stored activation domain. Tests use an in-process PostgreSQL engine (PGlite) against the same SQL as production `pg`. Production license, offer-index, and selection data must use PostgreSQL via `DATABASE_URL`, never an in-memory map.
+
+## DEC-019 — Discovery Select Contract
+
+**Status:** LOCKED  
+**Date:** 2026-08-21  
+**Decision:** `POST /v1/discovery/select` creates a 15-minute server-verifiable selection for an offer from discovery search. The request is `{ offer_id, selection_id }`. Tenant comes only from HMAC site identity; `tenant_id` in the body is ignored. `selection_id` is the idempotency key within the authenticated tenant/site. Repeat of a valid request returns the existing active selection; reusing the key for a different offer is `409`; an expired key is `410`. Phase 1 revalidates against PostgreSQL `normalized_offers` only. External connectors are not called while T-013 is blocked. The response is customer-safe: `selection_id`, `offer_id`, `expires_at`. No pricing recalculation, ranking, checkout, payment, Redis selection cache, or WooCommerce order metadata.
+
+**Why:** Loop 8 correctly blocked because this contract was undefined. The selection reference must exist before checkout metadata. Connector-backed live revalidation cannot be guessed.
+
+**Alternatives considered:** Live connector revalidation in this loop (rejected — T-013 blocked); accepting client-supplied tenant/offer ownership (rejected); writing WooCommerce order metadata in the same loop (rejected — separate task).
+
+**Consequences:** Plugin storefront search still does not call select. Checkout integration must use this selection reference later. Connector-backed revalidation needs a new decision after T-013 is unblocked.
 
 ## Change Protocol
 

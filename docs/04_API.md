@@ -119,9 +119,68 @@ Deterministic errors (standard error format):
 
 ## 6. Offer Selection
 
+Implemented (local only; not deployed):
+
 `POST /v1/discovery/select`
 
-The selection endpoint creates a server-verifiable reference to the selected offer. It must revalidate important offer data before allowing it to become the source of an order.
+Creates a short-lived, server-verifiable selection reference for an offer already returned by discovery search. Phase 1 revalidates against PostgreSQL `normalized_offers` only. Connectors are not called (T-013 remains BLOCKED). Future connector-backed live revalidation requires a separate documented decision.
+
+Protected site-HMAC endpoint (DEC-018 / DEC-019). Tenant is derived from the authenticated site. Clients must not send `tenant_id` as authorization (ignored if present). Feature `discovery.search` is required. Daily search quota is checked and is not incremented (usage metering remains a later task). HMAC per-site rate limiting may return `429`.
+
+Headers: same as `POST /v1/license/validate` (`x-prodexa-site-id`, `x-prodexa-timestamp`, `x-prodexa-nonce`, `x-prodexa-signature`, optional `x-request-id`).
+
+This endpoint does not recalculate price, rank results, start checkout, take payment, write WooCommerce order metadata, or call external connectors.
+
+### Request
+
+```json
+{
+  "offer_id": "off_...",
+  "selection_id": "<client-generated idempotency key>"
+}
+```
+
+`offer_id` is required (`off_` prefix, 1–120 additional `[A-Za-z0-9._-]` characters). `selection_id` is required (8–128 `[A-Za-z0-9._-]` characters) and is the idempotency key within the authenticated tenant/site.
+
+The offer must belong to the authenticated tenant and must be currently selectable: `availability` is `in_stock`, `preorder`, or `unknown`, and `expires_at` is null or in the future. `out_of_stock` and expired offers are rejected.
+
+### Persistence
+
+A selection row stores at least: `selection_id`, `tenant_id`, `site_id`, `offer_id`, `offer_retrieved_at` (offer/version reference for later verification), `created_at`, `expires_at`. TTL is 15 minutes. Expired selections are invalid. Redis is not used for selections.
+
+### Response
+
+Customer-safe fields only. Success bodies do not include `tenant_id`, `site_id`, `source_url`, `source_id`, or other internal identifiers.
+
+```json
+{
+  "selection_id": "sel_...",
+  "offer_id": "off_...",
+  "expires_at": "2026-08-21T00:15:00.000Z"
+}
+```
+
+`expires_at` is ISO-8601. Repeat of the same valid request returns the existing active selection. Reusing `selection_id` for a different offer returns `409`. Replaying an expired `selection_id` returns `410`; the client must mint a new key. The selection reference is the future server-verifiable handle before WooCommerce order creation; this loop does not write order metadata.
+
+Deterministic errors (standard error format):
+
+| HTTP | code | when |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | invalid JSON, `offer_id`, or `selection_id` |
+| 401 | `UNAUTHENTICATED` | missing/invalid HMAC or unknown site |
+| 401 | `AUTH_EXPIRED` | timestamp outside skew window |
+| 401 | `AUTH_REPLAY` | nonce already used for this site |
+| 403 | `SITE_REVOKED` | site activation revoked |
+| 403 | `LICENSE_REVOKED` / `LICENSE_SUSPENDED` / `LICENSE_PENDING` / `LICENSE_EXPIRED` | license not usable |
+| 403 | `ACTIVATION_LIMIT_EXCEEDED` | active sites exceed limit |
+| 403 | `FEATURE_NOT_ENTITLED` | plan does not include `discovery.search` |
+| 403 | `USAGE_LIMIT_EXCEEDED` | daily search quota already exhausted |
+| 404 | `OFFER_NOT_FOUND` | offer does not exist or is not visible to the tenant |
+| 409 | `SELECTION_CONFLICT` | `selection_id` already bound to a different offer |
+| 410 | `SELECTION_EXPIRED` | existing selection TTL elapsed |
+| 422 | `OFFER_NOT_SELECTABLE` | offer inactive, expired, or otherwise not selectable |
+| 429 | `RATE_LIMITED` | too many HMAC requests for the site |
+| 503 | `STORE_UNAVAILABLE` | no PostgreSQL / signing secret configured |
 
 ## 7. License Endpoints
 
@@ -250,7 +309,7 @@ Error messages must not leak credentials, SQL details, internal stack traces, or
 
 ## 11. Idempotency
 
-Mutation endpoints that may be retried should support idempotency keys.
+Mutation endpoints that may be retried should support idempotency keys. `POST /v1/discovery/select` uses client-generated `selection_id` as the idempotency key within the authenticated tenant and site.
 
 ## 12. Rate Limiting
 
