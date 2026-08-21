@@ -2,6 +2,21 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-21 — Loop 12: Phase 1 stored-price authority
+
+### Added
+
+- Locked DEC-021–025: backend-authoritative stored PostgreSQL offer price; no dynamic pricing engine; no tax/discount/fee/FX; no live connector price; no quote endpoint.
+- Server-side `resolveStoredOfferPrice` reads `normalized_offers` for the authenticated tenant. Search `display_price` remains the stored price with no markup.
+
+### Decision
+
+Locked DEC-021–025. This is the Phase 1 verification path for DEC-007, not a reversal. T-013 remains BLOCKED. Pricing engine / markup / quote API is deferred.
+
+### Implementation Status
+
+Regression tests cover ignored client-supplied prices on search/select, stored-price parsing, tenant-scoped price resolution, and plugin stripping of client price meta. No pricing formulas, quote API, payment, connectors, production deploy, or `api.prodexaai.cloud`. Hostinger was not inspected or changed. Apex `prodexaai.cloud` WordPress was not modified.
+
 ## 2026-08-21 — Loop 10: WooCommerce selection metadata
 
 ### Added

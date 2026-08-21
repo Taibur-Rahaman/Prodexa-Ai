@@ -39,7 +39,7 @@ Prodexa API (prodexaai.cloud / verified API subdomain)
       +--> Normalizer
       +--> Product Matcher
       +--> Ranking Engine
-      +--> Pricing Engine
+      +--> Pricing Engine   ← Phase 1: unused. Stored `normalized_offers.price` is authoritative (DEC-021–025).
       +--> License Service
       +--> Usage / Audit Service
       |
@@ -63,7 +63,7 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
-Pilot implementation (T-014 / T-015 / T-017): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search`, offer select via HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for the validated selection reference. HMAC secrets stay in PHP. Payment, product sync, pricing, ranking, and connectors are not implemented. Cached license state in WordPress is never treated as authorization. Order meta is never treated as authorization for price, license, tenant, or payment.
+Pilot implementation (T-014 / T-015 / T-017): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search`, offer select via HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for the validated selection reference. HMAC secrets stay in PHP. Payment, product sync, ranking, and connectors are not implemented. There is no dynamic pricing engine (DEC-022, DEC-025). Cached license state in WordPress is never treated as authorization. Order meta is never treated as authorization for price, license, tenant, or payment. Client-supplied Prodexa prices are never trusted (DEC-021).
 
 ## 5. Backend Responsibilities
 
@@ -78,7 +78,7 @@ The backend is responsible for:
 - Data normalization.
 - Product matching.
 - Ranking.
-- Pricing verification.
+- Pricing verification (Phase 1: stored PostgreSQL `normalized_offers.price`; no dynamic engine — DEC-021–025).
 - Caching.
 - Usage tracking.
 - Error handling.
@@ -99,7 +99,7 @@ The backend is responsible for:
 9. Response is returned to WordPress.
 10. WordPress renders customer-safe fields.
 
-Pilot implementation of steps 1–3 and 10: the plugin shortcode collects the query in the browser, WordPress AJAX relays it, and PHP sends a site-HMAC `POST /v1/discovery/search`. The browser never holds the site secret. Pilot implementation of step 5–8: connectors, ranking, and the pricing engine are not implemented. `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `offer_id` order, and `display_price` equal to the stored offer price. An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id.
+Pilot implementation of steps 1–3 and 10: the plugin shortcode collects the query in the browser, WordPress AJAX relays it, and PHP sends a site-HMAC `POST /v1/discovery/search`. The browser never holds the site secret. Pilot implementation of step 5–8: connectors, ranking, and a dynamic pricing engine are not implemented (DEC-022, DEC-025). `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `offer_id` order, and `display_price` equal to the stored offer price (DEC-021, DEC-024). An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id. Client-supplied prices are ignored.
 
 ### Offer selection
 
@@ -122,7 +122,7 @@ Pilot implementation (T-016 / DEC-019): `POST /v1/discovery/select` follows this
 7. Authorized admin can later use the selection reference; source URL and source price remain backend-authoritative.
 8. Merchant manually fulfills the order.
 
-Pilot implementation of steps 1–5 (T-017): invalid/expired/other-tenant selections fail checkout and do not write Prodexa meta. Payment, pricing, and line-item creation for discovered offers are not implemented.
+Pilot implementation of steps 1–5 (T-017): invalid/expired/other-tenant selections fail checkout and do not write Prodexa meta. Payment, priced line-item creation, and a dynamic pricing engine are not implemented. The Prodexa offer price remains the stored PostgreSQL value (DEC-021–025); WooCommerce does not override it.
 
 ## 7. Multi-Tenancy
 
@@ -217,7 +217,7 @@ Locked for the pilot (see `02_BUSINESS_DECISIONS.md` DEC-014, DEC-015, DEC-016, 
 
 - **API:** TypeScript, Node.js 22+, Fastify, repository path `apps/api`.
 - **Plugin:** PHP 8.2+ on the merchant WordPress/WooCommerce site (client only). Repository path `plugins/prodexa-ai`. No production API hostname is hard-coded. Storefront search/select proxy HMAC to the API. WooCommerce order meta is the selection reference only (DEC-020).
-- **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites). Tenant-scoped `normalized_offers` is the pilot discovery search corpus. Tenant/site-scoped `discovery_selections` holds 15-minute select references.
+- **Durable store:** PostgreSQL (not shared Hostinger MySQL used by other sites). Tenant-scoped `normalized_offers` is the pilot discovery search corpus and the Phase 1 offer-price source (DEC-024). Tenant/site-scoped `discovery_selections` holds 15-minute select references.
 - **Cache:** Redis via `REDIS_URL` (optional). Production uses a real Redis client (`ioredis`). License validation does not depend on Redis; PostgreSQL remains authoritative for HMAC, replay, and license status.
 - **Auth (plugin → API):** per-site HMAC-SHA256 (DEC-018); secrets stay server-side and never in the browser.
 - **Local run:** `HOST=0.0.0.0` and `PORT` from the environment. License persistence needs `DATABASE_URL` (PostgreSQL) and `API_SIGNING_SECRET`. Redis is optional (`REDIS_URL`).

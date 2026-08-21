@@ -91,6 +91,8 @@ The merchant shall be able to configure a pricing rule that adds the merchant's 
 
 Pricing calculations must be deterministic and auditable. The browser must never be the source of truth for the final payable amount.
 
+Phase 1 (DEC-021–025): there is no dynamic pricing engine and no markup formula. The authoritative offer price is stored PostgreSQL `normalized_offers.price`. Markup, tax, discounts, fees, live connector price, and a quote endpoint are deferred until a later locked decision.
+
 ### FR-08 — Customer Presentation
 
 Customers shall see products in the merchant's storefront experience.

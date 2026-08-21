@@ -27,7 +27,7 @@
 - [ ] Implement connector interface.
 - [ ] Implement first permitted connector.
 - [x] Implement normalized offer schema (TypeScript types + validator).
-- [ ] Implement deterministic pricing.
+- [x] Phase 1 stored-price authority (DEC-021–025; no dynamic pricing engine).
 - [ ] Implement ranking baseline.
 - [x] Implement WordPress plugin skeleton.
 - [x] Integrate storefront discovery UI.

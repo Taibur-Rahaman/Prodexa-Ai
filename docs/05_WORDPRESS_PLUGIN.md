@@ -23,8 +23,9 @@ The plugin must not:
 - Crawl many external websites directly during a customer request.
 - Store connector credentials.
 - Decide final pricing independently.
-- Trust browser-supplied price values.
+- Trust browser-supplied price values (DEC-021).
 - Contain the entire discovery/matching engine.
+- Override the Prodexa offer price in WooCommerce (DEC-021).
 
 ## Proposed Structure
 
@@ -58,7 +59,7 @@ plugins/prodexa-ai/
 └── tests/
 ```
 
-Checkout payment, product sync, and pricing are not implemented. Order metadata is the validated selection reference only (DEC-020).
+Checkout payment, product sync, and a dynamic pricing engine are not implemented (DEC-022, DEC-025). Order metadata is the validated selection reference only (DEC-020). Client-supplied Prodexa prices are never trusted (DEC-021). Phase 1 offer price is PostgreSQL `normalized_offers.price`.
 
 ## Skeleton (T-014)
 
@@ -79,7 +80,7 @@ Visitor browsers POST to `admin-ajax.php` (`prodexa_ai_search`, `wp_ajax_` and `
 
 Search runs on submit (not live-as-you-type) so identical UI states do not spam the quota. License, tenant, entitlement, and daily search quota remain authoritative on the API. If the API is down or rejects the request, the component shows a customer-safe error; the rest of WordPress continues.
 
-Not in this release: product sync, connectors, pricing, ranking, payment, or AI UI.
+Not in this release: product sync, connectors, ranking, payment, AI UI, or a dynamic pricing engine.
 
 ## Offer selection and WooCommerce metadata (T-017 / DEC-020)
 
@@ -96,7 +97,7 @@ copied from the API response. These keys are protected meta. They are not author
 
 Checkout POST fields matching `prodexa_` / `_prodexa_` are stripped. Client-supplied extra session keys (price, tenant, source URL) are dropped. Invalid, expired (`410`), unknown/other-tenant offer (`404`), or conflict (`409`) selections fail checkout deterministically with a customer-safe error and do not persist Prodexa metadata. Orders with no pending selection are unchanged. If the API is down during a pending selection, checkout of that selection fails; other store functionality continues.
 
-Not implemented: payment, WooCommerce price/totals changes, product sync, connectors, ranking, or AI UI.
+Not implemented: payment, WooCommerce price/totals changes, product sync, connectors, ranking, AI UI, or a dynamic pricing engine. WooCommerce does not persist or trust a client-supplied Prodexa price (DEC-021).
 
 Run `php plugins/prodexa-ai/tests/run.php` (no WordPress install required). Do not deploy the plugin onto apex `prodexaai.cloud` without human authorization.
 
@@ -163,7 +164,7 @@ If Prodexa API is unavailable:
 
 The plugin should target supported WordPress and WooCommerce versions defined at release time. Compatibility claims must be tested rather than assumed.
 
-PHP 8.2+ is the expected plugin runtime on merchant sites. Requires WordPress 6.4+. WooCommerce order-metadata hooks are implemented (DEC-020); payment, pricing, and product sync are not. The WordPress tree currently present on apex `prodexaai.cloud` is not the Prodexa plugin and must not be overwritten without human authorization.
+PHP 8.2+ is the expected plugin runtime on merchant sites. Requires WordPress 6.4+. WooCommerce order-metadata hooks are implemented (DEC-020); payment, a dynamic pricing engine, and product sync are not. The WordPress tree currently present on apex `prodexaai.cloud` is not the Prodexa plugin and must not be overwritten without human authorization.
 
 ## Security
 

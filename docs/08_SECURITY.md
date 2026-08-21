@@ -48,7 +48,7 @@ Sensitive operations should use short-lived or rotatable credentials and replay-
 
 Plugin-to-API calls use HMAC-SHA256 site credentials (DEC-018). Logs may include site id and license decision codes but must never include `x-prodexa-signature`, site secrets, or `API_SIGNING_SECRET`. `POST /v1/discovery/search` and `POST /v1/discovery/select` are protected the same way. Customer search payloads must not include `source_url`, `source_id`, site secrets, or other-tenant rows. Select responses must not include `tenant_id`, `site_id`, `source_url`, or `source_id`. Offer ownership is taken from PostgreSQL for the authenticated tenant; the client cannot assert tenant or offer ownership.
 
-The WordPress plugin treats browser and checkout-supplied values as untrusted. WooCommerce order metadata may store only `_prodexa_selection_id` and `_prodexa_selection_expires_at` copied from a successful HMAC `POST /v1/discovery/select` replay (DEC-020). That metadata is not authoritative for price, product identity beyond the selection reference, license, tenant, or payment. Checkout fields and extra session keys named `prodexa_` / `_prodexa_` must not become trusted Prodexa state.
+The WordPress plugin treats browser and checkout-supplied values as untrusted. WooCommerce order metadata may store only `_prodexa_selection_id` and `_prodexa_selection_expires_at` copied from a successful HMAC `POST /v1/discovery/select` replay (DEC-020). That metadata is not authoritative for price, product identity beyond the selection reference, license, tenant, or payment. Checkout fields and extra session keys named `prodexa_` / `_prodexa_` must not become trusted Prodexa state. A client-supplied Prodexa price must never become trusted Prodexa state (DEC-021). Phase 1 offer price is PostgreSQL `normalized_offers.price` (DEC-022, DEC-024).
 
 Redis, when configured, may store license validation extras (activation counts and usage snapshots) only. It must never store site secrets, `API_SIGNING_SECRET`, HMAC signatures, or license keys. License status, HMAC, and nonce replay remain on PostgreSQL so a stale cache cannot authorize a revoked site beyond the next DB status read.
 
@@ -66,7 +66,7 @@ AI outputs must be validated before use.
 
 ## Financial Integrity
 
-The final payable amount must be calculated or verified server-side.
+The final payable amount must be calculated or verified server-side (DEC-007). Phase 1 verifies the stored PostgreSQL offer price (DEC-021–025). There is no quote endpoint and no client-authoritative price.
 
 Never accept a client-provided source price as authoritative without checking its corresponding server-side offer/reference.
 

@@ -72,7 +72,7 @@ Headers: same as `POST /v1/license/validate` (`x-prodexa-site-id`, `x-prodexa-ti
 
 `query` is required (trimmed, 1–200 characters, at most 12 whitespace-separated terms). `page` defaults to 1 (minimum 1). `limit` defaults to 10 (maximum 20). `context` is optional. When `context.currency` is set, results are restricted to that ISO 4217 code. `context.country` must be ISO 3166-1 alpha-2 when present; it is accepted for connector routing later and does not filter the offer index (offers have no country field).
 
-Pilot search is parameterized PostgreSQL lexical AND-match of query terms against `title` and `description` on the tenant-scoped `normalized_offers` table. Order is stable by `offer_id` (ranking is not implemented). Connectors are not implemented (T-013); an empty index returns `results: []`. Search/index technology remains unlocked in the PRD; this loop does not introduce Elasticsearch or vector search. Redis query/result cache is not implemented; `meta.cached` is always `false`. `display_price` is the server-stored offer `price` until the pricing engine exists.
+Pilot search is parameterized PostgreSQL lexical AND-match of query terms against `title` and `description` on the tenant-scoped `normalized_offers` table. Order is stable by `offer_id` (ranking is not implemented). Connectors are not implemented (T-013); an empty index returns `results: []`. Search/index technology remains unlocked in the PRD; this loop does not introduce Elasticsearch or vector search. Redis query/result cache is not implemented; `meta.cached` is always `false`. Phase 1 `display_price` is the stored offer `price` (DEC-022, DEC-024). There is no pricing engine or quote endpoint (DEC-025). Client-supplied `price` / `display_price` in the search body is ignored.
 
 ### Response Shape
 
@@ -129,7 +129,7 @@ Protected site-HMAC endpoint (DEC-018 / DEC-019). Tenant is derived from the aut
 
 Headers: same as `POST /v1/license/validate` (`x-prodexa-site-id`, `x-prodexa-timestamp`, `x-prodexa-nonce`, `x-prodexa-signature`, optional `x-request-id`).
 
-This endpoint does not recalculate price, rank results, start checkout, take payment, or call external connectors. It does not write WooCommerce order metadata; the WordPress plugin does that after a successful replay (DEC-020).
+This endpoint does not recalculate price, rank results, start checkout, take payment, or call external connectors. It does not write WooCommerce order metadata; the WordPress plugin does that after a successful replay (DEC-020). Client-supplied `price` / `display_price` is ignored (DEC-021, DEC-025). There is no quote endpoint. When a later server-side flow needs the selected offer price, it is resolved from PostgreSQL `normalized_offers` for the authenticated tenant.
 
 ### Request
 

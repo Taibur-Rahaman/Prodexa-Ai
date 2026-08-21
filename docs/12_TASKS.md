@@ -12,6 +12,8 @@
 | 7 | 2026-08-21 | COMPLETE | Storefront `[prodexa_search]` proxies HMAC `POST /v1/discovery/search`. T-013 remains BLOCKED. Hostinger unchanged. |
 | 8 | 2026-08-21 | BLOCKED | `POST /v1/discovery/select` contract was undefined. No implementation. |
 | 10 | 2026-08-21 | COMPLETE | WooCommerce order metadata stores HMAC-validated `selection_id` (DEC-020). T-013 remains BLOCKED. Hostinger unchanged. |
+| 11 | 2026-08-21 | NEEDS_DECISION | Pricing engine blocked until DEC-021–025 were locked. No implementation. |
+| 12 | 2026-08-21 | COMPLETE | Locked DEC-021–025. Phase 1 stored PostgreSQL price; no dynamic engine or quote API. T-013 remains BLOCKED. Hostinger unchanged. |
 
 ## Completed
 
@@ -117,13 +119,19 @@
 - **Tests:** `php plugins/prodexa-ai/tests/run.php` (valid/expired/invalid/tenant-mismatch attach, select HMAC proxy, untrusted client meta stripped)
 - **Docs:** `05_WORDPRESS_PLUGIN.md`, DEC-020, `03_ARCHITECTURE.md`, `08_SECURITY.md`
 
+### T-018 — Phase 1 stored-price authority
+- **Priority:** P2
+- **Status:** done (no pricing engine; no quote endpoint; local only)
+- **Files:** `apps/api/src/discovery/stored-price.ts`, `apps/api/src/discovery/search.ts`, `apps/api/src/discovery/select.ts`, plugin selection/order metadata (unchanged trust model)
+- **Tests:** `apps/api/src/discovery/stored-price.test.ts`, search/select client-price ignore tests, plugin select/order meta price stripping
+- **Docs:** DEC-021–025, `04_API.md`, `03_ARCHITECTURE.md`, `05_WORDPRESS_PLUGIN.md`
+
 ## Now
 
 - [ ] **T-013** Build first permitted connector. P2 — **BLOCKED**: first connector source is not decided. Do not guess a connector.
 
 ## Next
 
-- [ ] Add pricing engine.
 - [ ] Add ranking baseline.
 - [ ] Add source freshness handling.
 - [ ] Add connector health monitoring.
@@ -132,6 +140,7 @@
 
 ## Later
 
+- [ ] Add pricing engine / markup / quote API — **deferred** (DEC-022, DEC-025) until a future locked decision. Do not invent formulas.
 - [ ] Dedicated Hostinger VPS/Docker for API (human authorization required).
 - [ ] Decide fate of WordPress currently on apex `prodexaai.cloud` (human decision; do not delete).
 - [ ] Create API hostname/subdomain only after runtime exists (human authorization).
