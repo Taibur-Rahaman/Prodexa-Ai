@@ -14,6 +14,8 @@
 | 10 | 2026-08-21 | COMPLETE | WooCommerce order metadata stores HMAC-validated `selection_id` (DEC-020). T-013 remains BLOCKED. Hostinger unchanged. |
 | 11 | 2026-08-21 | NEEDS_DECISION | Pricing engine blocked until DEC-021–025 were locked. No implementation. |
 | 12 | 2026-08-21 | COMPLETE | Locked DEC-021–025. Phase 1 stored PostgreSQL price; no dynamic engine or quote API. T-013 remains BLOCKED. Hostinger unchanged. |
+| 13 | 2026-08-22 | NEEDS_DECISION | Ranking unspecified. No ranking code. HEAD remained Loop 12 / T-018. |
+| 14 | 2026-08-22 | NEEDS_DECISION | Locked DEC-026. Ranking deferred; discovery stays `ORDER BY offer_id ASC`. Next Phase 1 task has no acceptance criteria. T-013 remains BLOCKED. Hostinger unchanged. |
 
 ## Completed
 
@@ -132,14 +134,15 @@
 
 ## Next
 
-- [ ] Add ranking baseline.
-- [ ] Add source freshness handling.
-- [ ] Add connector health monitoring.
-- [ ] Add integration tests.
-- [ ] Add load/performance tests.
+- [ ] Add ranking baseline. — **deferred** (DEC-026). Not a Phase 1 MVP contract. Do not change `ORDER BY offer_id ASC`.
+- [ ] Add source freshness handling. — no acceptance criteria or locked contract.
+- [ ] Add connector health monitoring. — blocked on T-013.
+- [ ] Add integration tests. — no acceptance criteria beyond existing PGlite suites.
+- [ ] Add load/performance tests. — no acceptance criteria.
 
 ## Later
 
+- [ ] Add ranking (score/sort/API) — **deferred** (DEC-026) until a future locked decision and API/task contract. Do not invent ranking.
 - [ ] Add pricing engine / markup / quote API — **deferred** (DEC-022, DEC-025) until a future locked decision. Do not invent formulas.
 - [ ] Dedicated Hostinger VPS/Docker for API (human authorization required).
 - [ ] Decide fate of WordPress currently on apex `prodexaai.cloud` (human decision; do not delete).

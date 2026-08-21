@@ -10,7 +10,7 @@ Prodexa AI is being built as a product-discovery engine with a WordPress/WooComm
 
 ## Current Stage
 
-Pilot / MVP. Last completed autonomous loop: **12**. Milestone: Phase 1 — Pilot MVP (in progress).
+Pilot / MVP. Last completed autonomous loop: **12**. Loop 14 locked DEC-026 (ranking deferred). Milestone: Phase 1 — Pilot MVP (in progress).
 
 ## Locked Architecture
 
@@ -27,11 +27,12 @@ Pilot / MVP. Last completed autonomous loop: **12**. Milestone: Phase 1 — Pilo
 - Plugin→API auth: per-site HMAC-SHA256 (DEC-018); secrets encrypted at rest; no browser-held site secret.
 - Canonical domain `prodexaai.cloud`; `api.prodexaai.cloud` does not exist.
 - License validation is local-only: PostgreSQL model + `POST /v1/license/validate` with optional Redis cache (T-011). Activate/deactivate are not implemented.
-- Discovery search is local-only: HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers` (T-012). No connectors, ranking, or Redis search cache. Phase 1 `display_price` is stored `normalized_offers.price` (DEC-021–025). No dynamic pricing engine or quote endpoint.
+- Discovery search is local-only: HMAC `POST /v1/discovery/search` against tenant-scoped PostgreSQL `normalized_offers` (T-012). No connectors or Redis search cache. Order is `ORDER BY offer_id ASC`. Ranking is **deferred** (DEC-026): not a Phase 1 MVP contract; no score, rank field, sort parameter, ranking API, ML/AI ranking, connector-based ranking, price-based ranking, or personalization. Phase 1 `display_price` is stored `normalized_offers.price` (DEC-021–025). No dynamic pricing engine or quote endpoint.
 - Discovery select is local-only: HMAC `POST /v1/discovery/select` against PostgreSQL `normalized_offers` + `discovery_selections` (T-016 / DEC-019). 15-minute TTL. No connector revalidation, ranking, or price in the select response. Client-supplied price is ignored.
 - WordPress plugin is in `plugins/prodexa-ai/` (T-014 / T-015 / T-017): settings, sealed site credentials, HMAC client, health check, display-only license refresh, storefront `[prodexa_search]`, HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for `_prodexa_selection_id` + `_prodexa_selection_expires_at` (DEC-020). Order meta is not authoritative for price, license, tenant, or payment. Client-supplied Prodexa prices are never trusted (DEC-021). Payment, product sync, and connectors are not implemented.
 - **T-013 remains BLOCKED:** first connector source is not decided. Do not guess a connector.
 - Dynamic pricing engine / markup / quote API is **deferred** (DEC-022, DEC-025).
+- Ranking is **deferred** (DEC-026). Do not add ranking code or change discovery order.
 
 ## Locked Product Principles
 
@@ -64,6 +65,7 @@ When a meaningful decision changes, update:
 
 ## Current Unknowns
 
+- Next unblocked Phase 1 task after DEC-026 (remaining TASKS items lack acceptance criteria; T-013 still BLOCKED; license activate/deactivate has no locked wire contract).
 - AI provider/model.
 - Billing provider.
 - First production connector set.

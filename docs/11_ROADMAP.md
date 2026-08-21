@@ -28,7 +28,7 @@
 - [ ] Implement first permitted connector.
 - [x] Implement normalized offer schema (TypeScript types + validator).
 - [x] Phase 1 stored-price authority (DEC-021–025; no dynamic pricing engine).
-- [ ] Implement ranking baseline.
+- [ ] Implement ranking baseline. — **deferred** (DEC-026). Not a Phase 1 MVP contract; search stays `ORDER BY offer_id ASC`.
 - [x] Implement WordPress plugin skeleton.
 - [x] Integrate storefront discovery UI.
 - [x] Integrate WooCommerce order metadata.

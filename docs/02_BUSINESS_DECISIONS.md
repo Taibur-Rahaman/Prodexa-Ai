@@ -256,6 +256,18 @@ AI tools must not silently reverse a locked decision.
 
 **Consequences:** No `/v1/pricing` routes. Select response stays `selection_id`, `offer_id`, `expires_at`. Server-side code may read `normalized_offers.price` for the authenticated tenant when a later flow needs the offer price. Clients cannot submit a trusted price.
 
+## DEC-026 — Phase 1 Ranking
+
+**Status:** LOCKED  
+**Date:** 2026-08-22  
+**Decision:** Ranking is NOT a Phase 1 MVP contract. Discovery search remains deterministic PostgreSQL ordering: `ORDER BY offer_id ASC`. No ranking score. No rank field. No sort parameter. No ranking API. No ML/AI ranking. No connector/live-data dependency. No price-based ranking. No personalization or sponsored ranking. Ranking may be introduced later under a new explicit decision and API/task contract.
+
+**Why:** Loop 13 correctly blocked because ranking signals, sort contract, and API fields were unspecified. Inventing a ranking model would change customer-visible search order without an authorized contract.
+
+**Alternatives considered:** Relevance ranking (rejected — not specified); price competitiveness ranking (rejected — no price-based ranking in Phase 1; DEC-022 has no pricing engine); ML/AI ranking (rejected — DEC-009 plus no ranking contract); client `sort` parameter (rejected); sponsored or personalized ranking (rejected).
+
+**Consequences:** Do not modify discovery search behavior. Do not add ranking code. TASKS "Add ranking baseline" is deferred. T-013 stays BLOCKED. Search continues to return lexical AND-match results in stable `offer_id` order.
+
 ## Change Protocol
 
 Before changing a locked decision:

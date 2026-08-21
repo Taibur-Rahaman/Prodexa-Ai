@@ -38,7 +38,7 @@ Prodexa API (prodexaai.cloud / verified API subdomain)
       |
       +--> Normalizer
       +--> Product Matcher
-      +--> Ranking Engine
+      +--> Ranking Engine   ← Phase 1: unused. Search order is `ORDER BY offer_id ASC` (DEC-026).
       +--> Pricing Engine   ← Phase 1: unused. Stored `normalized_offers.price` is authoritative (DEC-021–025).
       +--> License Service
       +--> Usage / Audit Service
@@ -63,7 +63,7 @@ The plugin is responsible for:
 
 The plugin must not contain source credentials or perform unrestricted multi-source crawling.
 
-Pilot implementation (T-014 / T-015 / T-017): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search`, offer select via HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for the validated selection reference. HMAC secrets stay in PHP. Payment, product sync, ranking, and connectors are not implemented. There is no dynamic pricing engine (DEC-022, DEC-025). Cached license state in WordPress is never treated as authorization. Order meta is never treated as authorization for price, license, tenant, or payment. Client-supplied Prodexa prices are never trusted (DEC-021).
+Pilot implementation (T-014 / T-015 / T-017): the client lives in `plugins/prodexa-ai/`. It ships bootstrap, Settings API configuration, sealed site credentials, an HMAC HTTP client, `GET /v1/health`, a display-only `POST /v1/license/validate` refresh, a storefront `[prodexa_search]` UI that proxies `POST /v1/discovery/search`, offer select via HMAC `POST /v1/discovery/select`, and WooCommerce order metadata for the validated selection reference. HMAC secrets stay in PHP. Payment, product sync, ranking, and connectors are not implemented. Ranking is not a Phase 1 MVP contract (DEC-026). There is no dynamic pricing engine (DEC-022, DEC-025). Cached license state in WordPress is never treated as authorization. Order meta is never treated as authorization for price, license, tenant, or payment. Client-supplied Prodexa prices are never trusted (DEC-021).
 
 ## 5. Backend Responsibilities
 
@@ -77,7 +77,7 @@ The backend is responsible for:
 - Connector execution.
 - Data normalization.
 - Product matching.
-- Ranking.
+- Ranking (Phase 1: unused — DEC-026; search remains `ORDER BY offer_id ASC`).
 - Pricing verification (Phase 1: stored PostgreSQL `normalized_offers.price`; no dynamic engine — DEC-021–025).
 - Caching.
 - Usage tracking.
@@ -99,7 +99,7 @@ The backend is responsible for:
 9. Response is returned to WordPress.
 10. WordPress renders customer-safe fields.
 
-Pilot implementation of steps 1–3 and 10: the plugin shortcode collects the query in the browser, WordPress AJAX relays it, and PHP sends a site-HMAC `POST /v1/discovery/search`. The browser never holds the site secret. Pilot implementation of step 5–8: connectors, ranking, and a dynamic pricing engine are not implemented (DEC-022, DEC-025). `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `offer_id` order, and `display_price` equal to the stored offer price (DEC-021, DEC-024). An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id. Client-supplied prices are ignored.
+Pilot implementation of steps 1–3 and 10: the plugin shortcode collects the query in the browser, WordPress AJAX relays it, and PHP sends a site-HMAC `POST /v1/discovery/search`. The browser never holds the site secret. Pilot implementation of step 5–8: connectors, ranking, and a dynamic pricing engine are not implemented (DEC-022, DEC-025, DEC-026). `POST /v1/discovery/search` queries the tenant-scoped PostgreSQL `normalized_offers` index with parameterized lexical AND-match, stable `ORDER BY offer_id ASC` (DEC-026), and `display_price` equal to the stored offer price (DEC-021, DEC-024). An empty index returns an empty page. Tenant isolation uses the authenticated site's `tenant_id`, never a client-supplied id. Client-supplied prices are ignored.
 
 ### Offer selection
 

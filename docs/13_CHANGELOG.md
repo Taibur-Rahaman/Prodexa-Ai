@@ -2,6 +2,21 @@
 
 All meaningful product, architecture, business, security, infrastructure, and documentation changes should be recorded here.
 
+## 2026-08-22 — Loop 14: Phase 1 ranking deferred
+
+### Added
+
+- Locked DEC-026: ranking is not a Phase 1 MVP contract. Discovery search remains `ORDER BY offer_id ASC`.
+- Explicit Phase 1 exclusions: no ranking score, rank field, sort parameter, ranking API, ML/AI ranking, connector/live-data ranking, price-based ranking, or personalization/sponsored ranking.
+
+### Decision
+
+Locked DEC-026. Ranking may be introduced later only under a new explicit decision and API/task contract. This does not change search behavior. T-013 remains BLOCKED.
+
+### Implementation Status
+
+Documentation lock only. No ranking code. Discovery search ordering is unchanged. Next Phase 1 task is unspecified (remaining TASKS items lack acceptance criteria). No connector, pricing engine, payment, production deploy, or `api.prodexaai.cloud`. Hostinger was not inspected or changed. Apex `prodexaai.cloud` WordPress was not modified.
+
 ## 2026-08-21 — Loop 12: Phase 1 stored-price authority
 
 ### Added
