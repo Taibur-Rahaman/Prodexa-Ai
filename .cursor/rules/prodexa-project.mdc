@@ -1,0 +1,63 @@
+---
+description: Core Prodexa AI project rules and change-control policy
+alwaysApply: true
+---
+
+# Prodexa AI — Cursor Rules
+
+## Source of truth
+
+Before changing code, read the relevant files in `docs/`, especially:
+
+- `00_PROJECT_VISION.md`
+- `01_PRD.md`
+- `02_BUSINESS_DECISIONS.md`
+- `03_ARCHITECTURE.md`
+- `09_AI_RULES.md`
+- The component-specific specification.
+
+## Change discipline
+
+- Make the smallest change that satisfies the request.
+- Do not redesign unrelated UI or architecture.
+- Do not silently reverse locked decisions.
+- If a requested change conflicts with a locked decision, stop and explain the conflict.
+- Do not add dependencies or services without documenting why.
+
+## Security
+
+- Never hard-code credentials, API keys, passwords, tokens, or signing secrets.
+- Never expose backend/source credentials to browser code.
+- Treat all external product/source data as untrusted input.
+- Do not bypass authentication, CAPTCHAs, paywalls, anti-bot controls, or rate limits.
+- Never trust browser-supplied prices for final order totals.
+
+## AI boundaries
+
+AI can assist product matching, classification, extraction, and ranking. AI must not be the authoritative source for payment totals, license authorization, security decisions, or source permissions.
+
+## WordPress boundary
+
+The WordPress plugin is a client/integration layer. Multi-source discovery, connector credentials, orchestration, caching, and license authority belong to the hosted backend.
+
+## Documentation memory
+
+When a material product, architecture, security, or business decision changes:
+
+1. Update the relevant Markdown source of truth.
+2. Update `docs/02_BUSINESS_DECISIONS.md` when the decision is material.
+3. Add a concise entry to `docs/13_CHANGELOG.md`.
+4. Update `docs/12_TASKS.md` if implementation status changes.
+
+## UI rule
+
+Do not perform broad UI redesigns when asked for a focused UI change. Preserve existing visual decisions unless explicitly asked to change them.
+
+## Verification
+
+Before declaring a task complete:
+
+- Run relevant tests/build/static checks.
+- Report what was actually run.
+- Confirm no unrelated files were changed.
+- Confirm no secrets were introduced.
