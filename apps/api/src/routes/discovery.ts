@@ -9,6 +9,7 @@ import {
   tokenizeSearchQuery,
 } from "../discovery/query.js";
 import { searchNormalizedOffers } from "../discovery/search.js";
+import { createDiscoverySelection, parseSelectBody } from "../discovery/select.js";
 import type { LicenseValidationCache } from "../cache/license-validation.js";
 import type { SqlClient } from "../db/sql.js";
 import { ApiError, apiError } from "../http/errors.js";
@@ -170,5 +171,59 @@ export function registerDiscoveryRoutes(
         count: results.length,
       },
     };
+  });
+
+  app.post("/v1/discovery/select", async (request, reply) => {
+    if (!deps.db || !deps.apiSigningSecret) {
+      throw new ApiError(
+        "STORE_UNAVAILABLE",
+        "Discovery select is unavailable.",
+        503,
+      );
+    }
+
+    const siteId = headerString(request, "x-prodexa-site-id");
+    const timestamp = headerString(request, "x-prodexa-timestamp");
+    const nonce = headerString(request, "x-prodexa-nonce");
+    const signature = headerString(request, "x-prodexa-signature");
+
+    if (!siteId || !timestamp || !nonce || !signature || !SITE_ID_PATTERN.test(siteId)) {
+      throw AUTH_UNAUTHENTICATED;
+    }
+
+    const payload = parseSelectBody(request.body);
+
+    const decision = await validateLicensedSite(
+      deps.db,
+      deps.apiSigningSecret,
+      {
+        siteId,
+        timestamp,
+        nonce,
+        signature,
+        method: request.method,
+        path: requestPath(request),
+        rawBody: request.rawBody ?? "",
+        requestedFeature: "discovery.search",
+      },
+      {
+        timestampSkewSeconds: deps.timestampSkewSeconds,
+        rateLimitPerMinute: deps.rateLimitPerMinute,
+        cache: deps.cache,
+      },
+    );
+
+    if (!decision.ok) {
+      return reply.status(decision.statusCode).send(
+        apiError(decision.code, decision.message, request.id),
+      );
+    }
+
+    return createDiscoverySelection(deps.db, {
+      tenantId: decision.tenant_id,
+      siteId: decision.site_id,
+      offerId: payload.offerId,
+      selectionId: payload.selectionId,
+    });
   });
 }
